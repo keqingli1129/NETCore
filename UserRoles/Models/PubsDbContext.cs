@@ -2,11 +2,12 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace UserRoles.Models;
 
-public partial class PubsDbContext : DbContext
+public partial class PubsDbContext : IdentityDbContext<Users>
 {
     public PubsDbContext(DbContextOptions<PubsDbContext> options)
         : base(options)
@@ -39,6 +40,9 @@ public partial class PubsDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Ensure Identity entity types are configured (primary keys, relationships, etc.)
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<Author>(entity =>
         {
             entity.HasKey(e => e.AuId).HasName("UPKCL_auidind");
