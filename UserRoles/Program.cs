@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using UserRoles.Models;
+using UserRoles.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +9,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<PubsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 var app = builder.Build();
-
+await SeedService.SeedDatabase(app.Services);
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
