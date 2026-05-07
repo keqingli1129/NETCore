@@ -1,0 +1,109 @@
+@model CoreMVC.Domain.Entities.Order
+
+@{
+    ViewData["Title"] = $"Order #{Model.OrderId}";
+}
+
+<h1>Order #@Model.OrderId</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Order Information</h4>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-4">Customer</dt>
+            <dd class="col-sm-8">@Model.Customer?.CompanyName</dd>
+
+            <dt class="col-sm-4">Employee</dt>
+            <dd class="col-sm-8">
+                @if (Model.Employee is not null)
+                {
+                    @($"{Model.Employee.FirstName} {Model.Employee.LastName}")
+                }
+            </dd>
+
+            <dt class="col-sm-4">Order Date</dt>
+            <dd class="col-sm-8">@Model.OrderDate?.ToString("yyyy-MM-dd")</dd>
+
+            <dt class="col-sm-4">Required Date</dt>
+            <dd class="col-sm-8">@Model.RequiredDate?.ToString("yyyy-MM-dd")</dd>
+
+            <dt class="col-sm-4">Shipped Date</dt>
+            <dd class="col-sm-8">@Model.ShippedDate?.ToString("yyyy-MM-dd")</dd>
+
+            <dt class="col-sm-4">Ship Via</dt>
+            <dd class="col-sm-8">@Model.ShipViaNavigation?.CompanyName</dd>
+
+            <dt class="col-sm-4">Freight</dt>
+            <dd class="col-sm-8">@Model.Freight?.ToString("C")</dd>
+        </dl>
+    </div>
+    <div class="col-md-6">
+        <h4>Shipping Address</h4>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-4">Ship Name</dt>
+            <dd class="col-sm-8">@Model.ShipName</dd>
+
+            <dt class="col-sm-4">Address</dt>
+            <dd class="col-sm-8">@Model.ShipAddress</dd>
+
+            <dt class="col-sm-4">City</dt>
+            <dd class="col-sm-8">@Model.ShipCity</dd>
+
+            <dt class="col-sm-4">Region</dt>
+            <dd class="col-sm-8">@Model.ShipRegion</dd>
+
+            <dt class="col-sm-4">Postal Code</dt>
+            <dd class="col-sm-8">@Model.ShipPostalCode</dd>
+
+            <dt class="col-sm-4">Country</dt>
+            <dd class="col-sm-8">@Model.ShipCountry</dd>
+        </dl>
+    </div>
+</div>
+
+@if (Model.OrderDetails.Any())
+{
+    <h4 class="mt-4">Line Items</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Discount</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var detail in Model.OrderDetails)
+            {
+                <tr>
+                    <td>@detail.Product?.ProductName</td>
+                    <td>@detail.UnitPrice.ToString("C")</td>
+                    <td>@detail.Quantity</td>
+                    <td>@detail.Discount.ToString("P0")</td>
+                    <td>@((detail.UnitPrice * detail.Quantity * (1 - (decimal)detail.Discount)).ToString("C"))</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4" class="text-end"><strong>Total</strong></td>
+                <td>
+                    <strong>
+                        @Model.OrderDetails
+                            .Sum(d => d.UnitPrice * d.Quantity * (1 - (decimal)d.Discount))
+                            .ToString("C")
+                    </strong>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+}
+
+<div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model.OrderId" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>

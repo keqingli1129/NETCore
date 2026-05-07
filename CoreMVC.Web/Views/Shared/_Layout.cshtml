@@ -41,6 +41,10 @@
             <li><a href="#">Education Foundation</a></li>
             <li><a href="#">Careers</a></li>
             <li><a href="#">Calendar</a></li>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <li><a asp-controller="Orders" asp-action="Index">Orders</a></li>
+            }
         </ul>
     </nav>
 

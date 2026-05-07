@@ -1,0 +1,56 @@
+@model IEnumerable<CoreMVC.Domain.Entities.Order>
+
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<h1>Orders</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Employee</th>
+            <th>Order Date</th>
+            <th>Required Date</th>
+            <th>Shipped Date</th>
+            <th>Ship Via</th>
+            <th>Freight</th>
+            <th>Ship City</th>
+            <th>Ship Country</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.OrderId</td>
+                <td>@item.Customer?.CompanyName</td>
+                <td>
+                    @if (item.Employee is not null)
+                    {
+                        @($"{item.Employee.FirstName} {item.Employee.LastName}")
+                    }
+                </td>
+                <td>@item.OrderDate?.ToString("yyyy-MM-dd")</td>
+                <td>@item.RequiredDate?.ToString("yyyy-MM-dd")</td>
+                <td>@item.ShippedDate?.ToString("yyyy-MM-dd")</td>
+                <td>@item.ShipViaNavigation?.CompanyName</td>
+                <td>@item.Freight?.ToString("C")</td>
+                <td>@item.ShipCity</td>
+                <td>@item.ShipCountry</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.OrderId" class="btn btn-sm btn-info">Details</a>
+                    <a asp-action="Edit" asp-route-id="@item.OrderId" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@item.OrderId" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
