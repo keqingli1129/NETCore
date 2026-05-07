@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using CoreMVC.Data;
+using CoreMVC.Web.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
 
@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 // Configure EF Core with SQL Server for Identity
-builder.Services.AddDbContext<CoreMVC.Data.ApplicationDbContext>(options =>
+builder.Services.AddDbContext<CoreMVC.Web.Data.ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Identity
@@ -17,7 +17,7 @@ builder.Services.AddDefaultIdentity<Microsoft.AspNetCore.Identity.IdentityUser>(
 {
     options.SignIn.RequireConfirmedAccount = false;
 })
-    .AddEntityFrameworkStores<CoreMVC.Data.ApplicationDbContext>();
+    .AddEntityFrameworkStores<CoreMVC.Web.Data.ApplicationDbContext>();
 
 var app = builder.Build();
 

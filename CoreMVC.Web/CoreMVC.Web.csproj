@@ -16,4 +16,11 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="CoreMVC\**" />
+    <Content Remove="CoreMVC\**" />
+    <EmbeddedResource Remove="CoreMVC\**" />
+    <None Remove="CoreMVC\**" />
+  </ItemGroup>
+
 </Project>
