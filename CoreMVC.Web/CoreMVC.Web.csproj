@@ -17,6 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CoreMVC.Application\CoreMVC.Application.csproj" />
+    <ProjectReference Include="..\CoreMVC.Infrastructure\CoreMVC.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="CoreMVC\**" />
     <Content Remove="CoreMVC\**" />
     <EmbeddedResource Remove="CoreMVC\**" />
