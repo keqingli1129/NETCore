@@ -11,9 +11,13 @@ public class RolesController : Controller
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<IdentityUser> _userManager;
 
-    public RolesController(RoleManager<IdentityRole> roleManager)
+    public RolesController(RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
     {
+        ArgumentNullException.ThrowIfNull(roleManager);
+        ArgumentNullException.ThrowIfNull(userManager);
+
         _roleManager = roleManager;
+        _userManager = userManager;
     }
 
     /// <summary>

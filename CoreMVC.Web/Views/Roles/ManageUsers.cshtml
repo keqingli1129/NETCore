@@ -1,9 +1,9 @@
 @{
     ViewData["Title"] = $"Manage Users for Role: {ViewBag.RoleName}";
-    var usersInRole = ViewBag.UsersInRole as List<Microsoft.AspNetCore.Identity.IdentityUser>;
-    var usersNotInRole = ViewBag.UsersNotInRole as List<Microsoft.AspNetCore.Identity.IdentityUser>;
-    string roleId = ViewBag.RoleId as string;
-    string roleName = ViewBag.RoleName as string;
+    var usersInRole = ViewBag.UsersInRole as List<Microsoft.AspNetCore.Identity.IdentityUser> ?? new List<Microsoft.AspNetCore.Identity.IdentityUser>();
+    var usersNotInRole = ViewBag.UsersNotInRole as List<Microsoft.AspNetCore.Identity.IdentityUser> ?? new List<Microsoft.AspNetCore.Identity.IdentityUser>();
+    string roleId = ViewBag.RoleId as string ?? string.Empty;
+    string roleName = ViewBag.RoleName as string ?? string.Empty;
 }
 
 <h1>Manage Users for Role: @roleName</h1>
