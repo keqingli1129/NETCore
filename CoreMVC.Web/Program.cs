@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
-using CoreMVC.Web.Services;
+using CoreMVC.Infrastructure.Data;
+using CoreMVC.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +33,11 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 //     "EnableSsl": "true"
 //   }
 // }
-builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, SmtpEmailSender>();
+// Register the Infrastructure implementation for both the application abstraction and Identity UI
+builder.Services.AddTransient<CoreMVC.Application.Interfaces.IEmailSender, CoreMVC.Infrastructure.Services.SmtpEmailSender>();
+builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender>(sp =>
+    sp.GetRequiredService<CoreMVC.Application.Interfaces.IEmailSender>() as Microsoft.AspNetCore.Identity.UI.Services.IEmailSender ??
+    (Microsoft.AspNetCore.Identity.UI.Services.IEmailSender)sp.GetRequiredService<CoreMVC.Infrastructure.Services.SmtpEmailSender>());
 
 var app = builder.Build();
 

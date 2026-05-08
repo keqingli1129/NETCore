@@ -3,6 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Application.Interfaces;
 
+using System.Net;
+using System.Net.Mail;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using System.Threading.Tasks;
+
 namespace CoreMVC.Infrastructure.Data
 {
     public partial class ApplicationDbContext : IdentityDbContext
