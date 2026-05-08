@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using CoreMVC.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,20 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// Register IEmailSender (SMTP). Configure Email settings in appsettings.json under the "Email" section.
+// Example appsettings.json:
+// "Email": {
+//   "From": "noreply@yourdomain.com",
+//   "Smtp": {
+//     "Host": "smtp.example.com",
+//     "Port": "587",
+//     "Username": "username",
+//     "Password": "password",
+//     "EnableSsl": "true"
+//   }
+// }
+builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, SmtpEmailSender>();
 
 var app = builder.Build();
 
