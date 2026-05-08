@@ -181,11 +181,14 @@ public class RolesController : Controller
                 usersNotInRole.Add(user);
         }
 
-        ViewBag.RoleId = role.Id;
-        ViewBag.RoleName = role.Name;
-        ViewBag.UsersInRole = usersInRole;
-        ViewBag.UsersNotInRole = usersNotInRole;
-        return View();
+        var vm = new CoreMVC.Web.Models.ManageUsersViewModel
+        {
+            RoleId = role.Id,
+            RoleName = role.Name ?? string.Empty,
+            UsersInRole = usersInRole,
+            UsersNotInRole = usersNotInRole
+        };
+        return View(vm);
     }
 
     /// <summary>

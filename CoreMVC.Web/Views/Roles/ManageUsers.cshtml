@@ -1,9 +1,10 @@
+@model CoreMVC.Web.Models.ManageUsersViewModel
 @{
-    ViewData["Title"] = $"Manage Users for Role: {ViewBag.RoleName}";
-    var usersInRole = ViewBag.UsersInRole as List<Microsoft.AspNetCore.Identity.IdentityUser> ?? new List<Microsoft.AspNetCore.Identity.IdentityUser>();
-    var usersNotInRole = ViewBag.UsersNotInRole as List<Microsoft.AspNetCore.Identity.IdentityUser> ?? new List<Microsoft.AspNetCore.Identity.IdentityUser>();
-    string roleId = ViewBag.RoleId as string ?? string.Empty;
-    string roleName = ViewBag.RoleName as string ?? string.Empty;
+    ViewData["Title"] = $"Manage Users for Role: {Model.RoleName}";
+    var usersInRole = Model.UsersInRole;
+    var usersNotInRole = Model.UsersNotInRole;
+    string roleId = Model.RoleId;
+    string roleName = Model.RoleName;
 }
 
 <h1>Manage Users for Role: @roleName</h1>
