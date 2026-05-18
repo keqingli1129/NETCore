@@ -43,8 +43,17 @@
             <li><a href="#">Calendar</a></li>
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <li><a asp-controller="Orders" asp-action="Index">Orders</a></li>
-                <li><a asp-controller="Roles" asp-action="Index">Roles</a></li>
+                @* Orders: visible to Admin and User roles *@
+                @if (User.IsInRole("Admin") || User.IsInRole("User"))
+                {
+                    <li><a asp-controller="Orders" asp-action="Index">Orders</a></li>
+                }
+
+                @* Roles: visible to Admin only *@
+                @if (User.IsInRole("Admin"))
+                {
+                    <li><a asp-controller="Roles" asp-action="Index">Roles</a></li>
+                }
             }
         </ul>
     </nav>
