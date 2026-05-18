@@ -2,6 +2,89 @@ html {
   font-size: 14px;
 }
 
+/* ===== Auth card styles (maroon theme) ===== */
+.auth-container {
+  min-height: calc(100vh - 220px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(180deg,#f5f7fb,#eef3f8);
+}
+
+.auth-card {
+  width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(30,30,30,0.08);
+  padding: 2.25rem;
+}
+
+.auth-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(107,26,42,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem auto;
+}
+
+.auth-title {
+  text-align: center;
+  font-size: 1.6rem;
+  margin: 0.25rem 0;
+  font-weight: 700;
+  color: #222;
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: #6b6b6b;
+  margin-bottom: 1.25rem;
+}
+
+.btn-maroon {
+  background-color: #6b1a2a;
+  border-color: #6b1a2a;
+  color: #fff;
+}
+.btn-maroon:hover, .btn-maroon:focus {
+  background-color: #5a1622;
+  border-color: #5a1622;
+}
+
+.divider {
+  text-align: center;
+  color: #9aa0a6;
+  position: relative;
+}
+.divider::before, .divider::after {
+  content: "";
+  height: 1px;
+  background: #e6e9ee;
+  position: absolute;
+  top: 50%;
+  width: 36%;
+}
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+.divider span { display: inline-block; background: #fff; padding: 0 0.75rem; position: relative; z-index: 1; }
+
+.external-btn {
+  background: #fff;
+  border: 1px solid #e6e9ee;
+  color: #222;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+}
+.external-btn svg { display: block; }
+
+@media (max-width: 480px) {
+  .auth-card { width: 100%; padding: 1.5rem; }
+}
+
 @media (min-width: 768px) {
   html {
     font-size: 16px;
