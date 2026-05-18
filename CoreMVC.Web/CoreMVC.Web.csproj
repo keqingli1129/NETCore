@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>CoreMVC.Web-UserSecrets</UserSecretsId>
   </PropertyGroup>
 
     <ItemGroup>
@@ -16,6 +17,7 @@
     <PackageReference Include="Microsoft.Build" Version="17.13.9" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.13.9" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
