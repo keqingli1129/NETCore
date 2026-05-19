@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
-using CoreMVC.Infrastructure.Data;
 using CoreMVC.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
