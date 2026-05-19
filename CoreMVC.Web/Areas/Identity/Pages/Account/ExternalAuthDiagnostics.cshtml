@@ -1,0 +1,26 @@
+@page
+@model CoreMVC.Web.Areas.Identity.Pages.Account.ExternalAuthDiagnosticsModel
+@{
+    ViewData["Title"] = "External Authentication Diagnostics";
+}
+
+<div class="container mt-4">
+    <h2>External Authentication Diagnostics</h2>
+    <p class="text-muted">This page is shown only in the Development environment and displays diagnostics about a failed external authentication attempt.</p>
+
+    <dl class="row">
+        <dt class="col-sm-3">Provider</dt>
+        <dd class="col-sm-9">@Model.Provider</dd>
+
+        <dt class="col-sm-3">Error Type</dt>
+        <dd class="col-sm-9">@Model.Error</dd>
+
+        <dt class="col-sm-3">Error Description</dt>
+        <dd class="col-sm-9"><pre>@Model.ErrorDescription</pre></dd>
+
+        <dt class="col-sm-3">Full Failure</dt>
+        <dd class="col-sm-9"><pre>@Model.FullFailure</pre></dd>
+    </dl>
+
+    <a class="btn btn-secondary" asp-page="/Account/Login">Back to login</a>
+</div>

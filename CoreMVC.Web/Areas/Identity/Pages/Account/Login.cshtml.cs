@@ -84,11 +84,19 @@ namespace CoreMVC.Web.Areas.Identity.Pages.Account
             public bool RememberMe { get; set; }
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(string returnUrl = null, string error_description = null)
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
+            }
+
+            if (!string.IsNullOrEmpty(error_description))
+            {
+                // Limit size for display and logging
+                var display = error_description.Length > 300 ? error_description.Substring(0, 300) + "..." : error_description;
+                _logger.LogWarning("External authentication error redirected to login page: {ErrorDescription}", display);
+                ModelState.AddModelError(string.Empty, $"External authentication failed: {display}");
             }
 
             returnUrl ??= Url.Content("~/");

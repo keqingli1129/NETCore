@@ -2,6 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using CoreMVC.Application.Interfaces;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using System;
+using System.Security.Claims;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,20 +26,151 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// Configure external authentication providers (Google) if configured
+// Configure external authentication providers (Google + EntraID/Azure AD) if configured
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+
+var azureClientId = builder.Configuration["Authentication:AzureAd:ClientId"];
+var azureClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecret"];
+var azureTenantId = builder.Configuration["Authentication:AzureAd:TenantId"];
+var azureInstance = builder.Configuration["Authentication:AzureAd:Instance"] ?? "https://login.microsoftonline.com/";
+
+var authBuilder = builder.Services.AddAuthentication();
+
 var googleConfigured = false;
 if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
 {
-    builder.Services.AddAuthentication()
-        .AddGoogle(googleOptions =>
-        {
-            googleOptions.ClientId = googleClientId;
-            googleOptions.ClientSecret = googleClientSecret;
-        });
+    authBuilder.AddGoogle(googleOptions =>
+    {
+        googleOptions.ClientId = googleClientId;
+        googleOptions.ClientSecret = googleClientSecret;
+    });
 
     googleConfigured = true;
+}
+
+var azureConfigured = false;
+//  
+if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azureClientSecret) && !string.IsNullOrWhiteSpace(azureTenantId))
+{
+    // Register EntraID / Azure AD as an external OpenID Connect provider.
+    // This uses the external identity scheme so it works with ASP.NET Core Identity external login flow.
+    // Register OpenID Connect with a display name so it shows up as an external login provider
+    authBuilder.AddOpenIdConnect("AzureAD", "EntraID", options =>
+    {
+        options.SignInScheme = IdentityConstants.ExternalScheme;
+        options.ClientId = azureClientId;
+        options.ClientSecret = azureClientSecret;
+        options.Authority = azureInstance.EndsWith("/") ? azureInstance + azureTenantId + "/v2.0" : azureInstance + "/" + azureTenantId + "/v2.0";
+        options.ResponseType = OpenIdConnectResponseType.Code;
+        // Do not persist tokens into the external authentication cookie to avoid large header/cookie sizes
+        // which can cause HTTP 400 Request Too Long errors when the provider returns large tokens.
+        options.SaveTokens = false;
+        // Recommended scopes
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        // Default callback path is /signin-oidc; Identity external login will handle the redirect
+        // Map token claims if needed here
+        // Process the EntraID callback to create/link a local Identity user and sign them in
+        options.Events = new OpenIdConnectEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                try
+                {
+                    var email = context.Principal?.FindFirst(ClaimTypes.Email)?.Value
+                                ?? context.Principal?.FindFirst("preferred_username")?.Value
+                                ?? context.Principal?.FindFirst("upn")?.Value;
+
+                    if (string.IsNullOrWhiteSpace(email))
+                    {
+                        // Nothing to do if we can't determine a user identifier
+                        return;
+                    }
+
+                    var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
+                    var signInManager = context.HttpContext.RequestServices.GetRequiredService<SignInManager<IdentityUser>>();
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+
+                    var user = await userManager.FindByEmailAsync(email);
+                    if (user == null)
+                    {
+                        user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
+                        var createResult = await userManager.CreateAsync(user);
+                        if (!createResult.Succeeded)
+                        {
+                            logger.LogWarning("Failed to create local user for external login: {Errors}", string.Join(';', createResult.Errors.Select(e => e.Description)));
+                            return;
+                        }
+                    }
+
+                    // Link the external login if not already linked
+                    var nameId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (!string.IsNullOrWhiteSpace(nameId))
+                    {
+                        var userLogins = await userManager.GetLoginsAsync(user);
+                        var alreadyLinked = userLogins.Any(l => l.LoginProvider == "AzureAD" && l.ProviderKey == nameId);
+                        if (!alreadyLinked)
+                        {
+                            var info = new UserLoginInfo("AzureAD", nameId, "EntraID");
+                            var addLoginResult = await userManager.AddLoginAsync(user, info);
+                            if (!addLoginResult.Succeeded)
+                            {
+                                logger.LogWarning("Failed to add external login for user {Email}: {Errors}", email, string.Join(';', addLoginResult.Errors.Select(e => e.Description)));
+                            }
+                        }
+                    }
+
+                    // Sign the user in to the application
+                    await signInManager.SignInAsync(user, isPersistent: false);
+                }
+                catch (Exception ex)
+                {
+                    // Let the normal pipeline handle failures, but log for diagnostics
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                    logger.LogError(ex, "Error processing EntraID token validation callback");
+                }
+            },
+            OnRemoteFailure = async context =>
+            {
+                // Log full failure server-side for diagnostics
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                logger.LogWarning(context.Failure, "External authentication failed during OIDC callback.");
+
+                // Prepare values for redirect. Include a base64-encoded failure message for diagnostics.
+                var message = context.Failure?.Message ?? "External authentication failed";
+                if (message.Length > 1000) message = message.Substring(0, 1000);
+                var encoded = Uri.EscapeDataString(message);
+
+                // In Development, redirect to a diagnostics page with full details. In Production, redirect to login with short message.
+                var env = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+
+                // Ensure the external cookie is cleared so a stale/oversized cookie doesn't cause subsequent requests to fail.
+                // If the request is already rejected by the server for having headers too large this won't run; in that case clear cookies from the browser.
+                await context.HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+                context.HandleResponse();
+                if (env.IsDevelopment())
+                {
+                    // Include the provider name and the error description
+                    var provider = context.Properties?.Items.ContainsKey(".AuthScheme") == true ? context.Properties.Items[".AuthScheme"] : "External";
+                    context.Response.Redirect($"/Identity/Account/ExternalAuthDiagnostics?provider={Uri.EscapeDataString(provider)}&error={Uri.EscapeDataString(context.Failure?.GetType().FullName ?? "")}&error_description={encoded}");
+                }
+                else
+                {
+                    // Production: keep user-facing redirect minimal
+                    var shortMsg = message.Length > 200 ? message.Substring(0, 200) : message;
+                    context.Response.Redirect($"/Identity/Account/Login?error=ExternalAuthFailed&error_description={Uri.EscapeDataString(shortMsg)}");
+                }
+
+                return;
+            }
+        };
+    });
+
+    azureConfigured = true;
 }
 
 // Register IEmailSender (SMTP). Configure Email settings in appsettings.json under the "Email" section.
@@ -65,6 +202,10 @@ if (!app.Environment.IsDevelopment())
 if (!googleConfigured)
 {
     app.Logger.LogWarning("Google authentication not configured. Skipping Google external login registration.");
+}
+if (!azureConfigured)
+{
+    app.Logger.LogWarning("AzureAD/EntraID authentication not configured. Skipping EntraID external login registration.");
 }
 
 app.UseHttpsRedirection();
