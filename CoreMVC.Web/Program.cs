@@ -155,7 +155,12 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
                 if (env.IsDevelopment())
                 {
                     // Include the provider name and the error description
-                    var provider = context.Properties?.Items.ContainsKey(".AuthScheme") == true ? context.Properties.Items[".AuthScheme"] : "External";
+                    string provider = "External";
+                    if (context.Properties?.Items != null && context.Properties.Items.TryGetValue(".AuthScheme", out var prov) && !string.IsNullOrWhiteSpace(prov))
+                    {
+                        provider = prov!;
+                    }
+
                     context.Response.Redirect($"/Identity/Account/ExternalAuthDiagnostics?provider={Uri.EscapeDataString(provider)}&error={Uri.EscapeDataString(context.Failure?.GetType().FullName ?? "")}&error_description={encoded}");
                 }
                 else
