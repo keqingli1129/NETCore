@@ -201,7 +201,7 @@ public class OrdersController : Controller
         return await _context.Orders.AnyAsync(o => o.OrderId == id);
     }
 
-    private void PopulateDropdowns(Order order = null)
+    private void PopulateDropdowns(Order? order = null)
     {
         ViewData["CustomerId"] = new SelectList(
             _context.Customers.OrderBy(c => c.CompanyName),
