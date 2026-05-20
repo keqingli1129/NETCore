@@ -62,6 +62,15 @@
                     <div class="d-grid gap-2">
                         @foreach (var provider in Model.ExternalLogins!)
                         {
+                            if (string.Equals(provider.Name, "SAML", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var display = provider.DisplayName ?? provider.Name;
+                                <button type="submit" name="provider" value="SAML" class="btn external-btn d-flex align-items-center" title="Continue with @display">
+                                    <span class="me-3">🔐</span>
+                                    <span class="flex-grow-1 text-start">Continue with @display</span>
+                                </button>
+                                continue;
+                            }
                             <button type="submit" name="provider" value="@provider.Name" class="btn external-btn d-flex align-items-center" title="Continue with @provider.DisplayName">
                                 @if (provider.Name?.ToLower().Contains("google") == true)
                                 {

@@ -177,8 +177,7 @@ public class Response : BaseResponse
     {
         if (_xmlDoc == null || _xmlNameSpaceManager == null)
             return null;
-
-        XmlNode? node = _xmlDoc.SelectSingleNode("/samlp:Response/saml:Assertion[1]/saml:AttributeStatement/saml:Attribut[@Name='Username']/saml:AttributeValue", _xmlNameSpaceManager);
+        XmlNode? node = _xmlDoc.SelectSingleNode("/samlp:Response/saml:Assertion[1]/saml:AttributeStatement/saml:Attribute[@Name='Username']/saml:AttributeValue", _xmlNameSpaceManager);
         return node?.InnerText;
     }
 
@@ -198,9 +197,12 @@ public class Response : BaseResponse
 
     public virtual string? GetEmail()
     {
-        return GetCustomAttribute("User.email")
-            ?? GetCustomAttribute("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress") //some providers (for example Azure AD) put last name into an attribute named "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-            ?? GetCustomAttribute("mail"); //some providers put last name into an attribute named "mail"
+        // Try common attribute names used by IdPs. Add more if your IdP uses a different attribute name.
+        return GetCustomAttribute("EmailAddress")
+            ?? GetCustomAttribute("email")
+            ?? GetCustomAttribute("User.email")
+            ?? GetCustomAttribute("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress") // Azure/others
+            ?? GetCustomAttribute("mail");
     }
 
     public virtual string? GetFirstName()

@@ -91,6 +91,13 @@ namespace CoreMVC.Web.Areas.Identity.Pages.Account
         public IActionResult OnPost(string provider, string returnUrl = null)
         {
             // Request a redirect to the external login provider.
+            if (string.Equals(provider, "SAML", StringComparison.OrdinalIgnoreCase))
+            {
+                // Redirect to our SAML initiate page which builds and sends the AuthRequest to IdP
+                var url = Url.Page("./SamlInitiate", values: new { returnUrl });
+                return LocalRedirect(url);
+            }
+
             var redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return new ChallengeResult(provider, properties);

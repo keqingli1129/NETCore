@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System;
+using CoreMVC.Web;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -35,7 +36,27 @@ var azureClientSecret = builder.Configuration["Authentication:AzureAd:ClientSecr
 var azureTenantId = builder.Configuration["Authentication:AzureAd:TenantId"];
 var azureInstance = builder.Configuration["Authentication:AzureAd:Instance"] ?? "https://login.microsoftonline.com/";
 
+// Bind SAML settings and add authentication
+builder.Services.Configure<SamlOptions>(builder.Configuration.GetSection("Saml"));
+
 var authBuilder = builder.Services.AddAuthentication();
+
+// Register a simple external scheme for SAML so it appears on the Identity external login list.
+// Challenging this scheme will redirect to the SamlInitiate page where we build the AuthRequest.
+var samlEntity = builder.Configuration["Saml:EntityId"];
+var samlIdp = builder.Configuration["Saml:IdpSsoUrl"];
+var idpPath = builder.Configuration["Saml:IdpCertificatePath"];
+var idpPem = !string.IsNullOrEmpty(idpPath) && File.Exists(idpPath)
+    ? File.ReadAllText(idpPath)
+    : builder.Configuration["Saml:IdpCertificate"]; // fallback to inline (dev only)
+if (!string.IsNullOrWhiteSpace(samlEntity) && !string.IsNullOrWhiteSpace(samlIdp) && !string.IsNullOrWhiteSpace(idpPath))
+{
+    // Display name must be non-null to show up in ExternalLogins list
+    authBuilder.AddCookie("SAML", "Skyward Login", options =>
+    {
+        options.LoginPath = "/Identity/Account/SamlInitiate"; // our initiate page
+    });
+}
 
 var googleConfigured = false;
 if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
