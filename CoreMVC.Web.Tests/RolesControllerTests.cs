@@ -16,7 +16,7 @@ public class RolesControllerTests
 {
     private RoleManager<IdentityRole> CreateRoleManager(IEnumerable<IdentityRole> roles)
     {
-        var store = A.Fake<IRoleStore<IdentityRole>>();
+        var store = A.Fake<Microsoft.AspNetCore.Identity.IQueryableRoleStore<IdentityRole>>();
         var roleValidators = new List<IRoleValidator<IdentityRole>>();
         var lookupNormalizer = A.Fake<Microsoft.AspNetCore.Identity.ILookupNormalizer>();
         var errors = A.Fake<Microsoft.AspNetCore.Identity.IdentityErrorDescriber>();
@@ -27,6 +27,7 @@ public class RolesControllerTests
         // Fake FindById and Roles enumerable via store
         A.CallTo(() => store.FindByIdAsync(A<string>._, default)).ReturnsLazily((string id, System.Threading.CancellationToken _) =>
             Task.FromResult(roles.FirstOrDefault(r => r.Id == id)));
+        A.CallTo(() => ((Microsoft.AspNetCore.Identity.IQueryableRoleStore<IdentityRole>)store).Roles).Returns(new TestAsyncEnumerable<IdentityRole>(roles));
 
         return roleManager;
     }
@@ -56,7 +57,9 @@ public class RolesControllerTests
         var roles = new[] { new IdentityRole("Admin"), new IdentityRole("User") };
         var roleManager = CreateRoleManager(roles);
 
-        var userManager = A.Fake<UserManager<IdentityUser>>();
+        var userStore = A.Fake<IUserStore<IdentityUser>>();
+        var userManager = A.Fake<UserManager<IdentityUser>>(x => x.WithArgumentsForConstructor(() =>
+            new UserManager<IdentityUser>(userStore, null, null, null, null, null, null, null, null)));
 
         var controller = new RolesController(roleManager, userManager);
 

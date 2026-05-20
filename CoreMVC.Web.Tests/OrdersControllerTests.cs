@@ -52,9 +52,9 @@ public class OrdersControllerTests
             OrderId = 42,
             OrderDate = new DateTime(2024, 4, 2),
             ShipCity = "City",
-            Customer = new Customer { CompanyName = "Acme" },
-            Employee = new Employee { FirstName = "John", LastName = "Doe" },
-            ShipViaNavigation = new Shipper { CompanyName = "FastShip" }
+            Customer = new Customer { CustomerId = "CUST42", CompanyName = "Acme" },
+            Employee = new Employee { EmployeeId = 1, FirstName = "John", LastName = "Doe" },
+            ShipViaNavigation = new Shipper { ShipperId = 1, CompanyName = "FastShip" }
         };
 
         var options = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<ApplicationDbContext>()
