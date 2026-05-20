@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreMVC.Infrastructure", "C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedKernel", "SharedKernel\SharedKernel.csproj", "{E68FA0BA-F0A4-F704-5156-C748B031AB9D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreMVC.Web.Tests", "CoreMVC.Web.Tests\CoreMVC.Web.Tests.csproj", "{B20612FB-21B6-47DC-35C8-642C2342428A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{E68FA0BA-F0A4-F704-5156-C748B031AB9D}.Release|x64.Build.0 = Release|Any CPU
 		{E68FA0BA-F0A4-F704-5156-C748B031AB9D}.Release|x86.ActiveCfg = Release|Any CPU
 		{E68FA0BA-F0A4-F704-5156-C748B031AB9D}.Release|x86.Build.0 = Release|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Debug|x64.Build.0 = Debug|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Debug|x86.Build.0 = Debug|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Release|x64.ActiveCfg = Release|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Release|x64.Build.0 = Release|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Release|x86.ActiveCfg = Release|Any CPU
+		{B20612FB-21B6-47DC-35C8-642C2342428A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
