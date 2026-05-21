@@ -23,11 +23,11 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build -c Release --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test -c Release --no-build --verbosity normal
     - name: Publish CoreMVC.Web
-      run: dotnet publish CoreMVC.Web/CoreMVC.Web.csproj -c Release -o CoreMVC.Web/publish --no-build
+      run: dotnet publish CoreMVC.Web/CoreMVC.Web.csproj -c Release -o CoreMVC.Web/publish
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
