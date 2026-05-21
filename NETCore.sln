@@ -19,6 +19,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreMVC.Web.Tests", "CoreMV
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreMVC.Web.IntegrationTests", "CoreMVC.Web.IntegrationTests\CoreMVC.Web.IntegrationTests.csproj", "{D73D0306-9D5D-A21A-6472-57E25436EE18}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{48FD2A0B-ADA6-4E33-B5E5-2B63120AAF54}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\coremvc.web.yml = .github\workflows\coremvc.web.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
