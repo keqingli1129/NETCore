@@ -144,6 +144,34 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
                         }
                     }
 
+                    // If the OpenID Connect provider returned tokens (access/refresh/id), persist them
+                    // to the AspNetUserTokens table so the app can call APIs later without storing tokens in the cookie.
+                    try
+                    {
+                        var accessToken = context.ProtocolMessage?.AccessToken;
+                        var refreshToken = context.ProtocolMessage?.RefreshToken;
+                        var idToken = context.ProtocolMessage?.IdToken;
+
+                        if (!string.IsNullOrWhiteSpace(accessToken))
+                        {
+                            await userManager.SetAuthenticationTokenAsync(user, "AzureAD", "access_token", accessToken);
+                        }
+                        if (!string.IsNullOrWhiteSpace(refreshToken))
+                        {
+                            await userManager.SetAuthenticationTokenAsync(user, "AzureAD", "refresh_token", refreshToken);
+                        }
+                        if (!string.IsNullOrWhiteSpace(idToken))
+                        {
+                            await userManager.SetAuthenticationTokenAsync(user, "AzureAD", "id_token", idToken);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Token persistence failure shouldn't block sign-in; log for diagnostics
+                        var tokenLogger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                        tokenLogger.LogWarning(ex, "Failed to persist external tokens for user {Email}", email);
+                    }
+
                     // Sign the user in to the application
                     await signInManager.SignInAsync(user, isPersistent: false);
                 }
@@ -214,6 +242,10 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
 // Register the Infrastructure implementation for both the application abstraction and Identity UI
 builder.Services.AddTransient<CoreMVC.Application.Interfaces.IEmailSender, CoreMVC.Infrastructure.Services.SmtpEmailSender>();
 builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, CoreMVC.Infrastructure.Services.SmtpEmailSender>();
+
+// Register TokenService for reading/refreshing stored tokens and calling downstream APIs
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<CoreMVC.Application.Interfaces.ITokenService, CoreMVC.Infrastructure.Services.TokenService>();
 
 var app = builder.Build();
 
