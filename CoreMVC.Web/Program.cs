@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System;
 using CoreMVC.Web;
 using System.Security.Claims;
+using System.Collections.Generic;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -84,19 +85,138 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
         options.ClientSecret = azureClientSecret;
         options.Authority = azureInstance.EndsWith("/") ? azureInstance + azureTenantId + "/v2.0" : azureInstance + "/" + azureTenantId + "/v2.0";
         options.ResponseType = OpenIdConnectResponseType.Code;
-        // Do not persist tokens into the external authentication cookie to avoid large header/cookie sizes
-        // which can cause HTTP 400 Request Too Long errors when the provider returns large tokens.
+        // Do not persist tokens into the external authentication cookie to avoid large header/cookie sizes.
+        // We will redeem the authorization code and persist tokens server-side in AuthorizationCodeReceived.
         options.SaveTokens = false;
         // Recommended scopes
         options.Scope.Clear();
         options.Scope.Add("openid");
         options.Scope.Add("profile");
         options.Scope.Add("email");
+        // Request offline_access to receive a refresh token
+        options.Scope.Add("offline_access");
         // Default callback path is /signin-oidc; Identity external login will handle the redirect
         // Map token claims if needed here
         // Process the EntraID callback to create/link a local Identity user and sign them in
         options.Events = new OpenIdConnectEvents
         {
+            // Redeem the authorization code manually so we don't store tokens in the external cookie
+            OnAuthorizationCodeReceived = async context =>
+            {
+                try
+                {
+                    var code = context.ProtocolMessage?.Code;
+                    if (string.IsNullOrWhiteSpace(code)) return;
+
+                    var httpFactory = context.HttpContext.RequestServices.GetRequiredService<IHttpClientFactory>();
+                    var client = httpFactory.CreateClient();
+
+                    // Build token endpoint from configured instance/tenant
+                    var tokenEndpoint = (azureInstance.EndsWith("/") ? azureInstance + azureTenantId + "/oauth2/v2.0/token" : azureInstance + "/" + azureTenantId + "/oauth2/v2.0/token");
+
+                    string? redirectUri = context.ProtocolMessage?.RedirectUri;
+                    if (string.IsNullOrWhiteSpace(redirectUri) && context.Properties?.Items != null)
+                    {
+                        context.Properties.Items.TryGetValue(".redirect_uri", out redirectUri);
+                    }
+
+                    var body = new List<KeyValuePair<string, string>>
+                    {
+                        new KeyValuePair<string, string>("client_id", azureClientId!),
+                        new KeyValuePair<string, string>("client_secret", azureClientSecret!),
+                        new KeyValuePair<string, string>("grant_type", "authorization_code"),
+                        new KeyValuePair<string, string>("code", code),
+                    };
+                    if (!string.IsNullOrWhiteSpace(redirectUri)) body.Add(new KeyValuePair<string, string>("redirect_uri", redirectUri!));
+
+                    var resp = await client.PostAsync(tokenEndpoint, new FormUrlEncodedContent(body));
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                        logger.LogWarning("Token endpoint returned {Status} when redeeming code", resp.StatusCode);
+                        return;
+                    }
+
+                    using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+                    var at = doc.RootElement.TryGetProperty("access_token", out var atEl) ? atEl.GetString() : null;
+                    var rt = doc.RootElement.TryGetProperty("refresh_token", out var rtEl) ? rtEl.GetString() : null;
+                    var idt = doc.RootElement.TryGetProperty("id_token", out var idEl) ? idEl.GetString() : null;
+
+                    // Tell the middleware we've handled code redemption so it won't attempt its own token exchange
+                    try
+                    {
+                        if (!string.IsNullOrWhiteSpace(at) || !string.IsNullOrWhiteSpace(idt))
+                        {
+                            context.HandleCodeRedemption(at, idt);
+                        }
+                    }
+                    catch { /* no-op if not supported */ }
+
+                    // Persist tokens server-side after creating/linking the local user
+                    var email = context.Principal?.FindFirst(ClaimTypes.Email)?.Value
+                                ?? context.Principal?.FindFirst("preferred_username")?.Value
+                                ?? context.Principal?.FindFirst("upn")?.Value;
+
+                    if (!string.IsNullOrWhiteSpace(email))
+                    {
+                        var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
+                        var user = await userManager.FindByEmailAsync(email);
+                        if (user == null)
+                        {
+                            user = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
+                            var createResult = await userManager.CreateAsync(user);
+                            if (!createResult.Succeeded)
+                            {
+                                var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                                logger.LogWarning("Failed to create local user for external login: {Errors}", string.Join(';', createResult.Errors.Select(e => e.Description)));
+                            }
+                        }
+
+                        // Link login if not present
+                        var nameId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        if (!string.IsNullOrWhiteSpace(nameId))
+                        {
+                            var userLogins = await userManager.GetLoginsAsync(user!);
+                            var alreadyLinked = userLogins.Any(l => l.LoginProvider == "AzureAD" && l.ProviderKey == nameId);
+                            if (!alreadyLinked)
+                            {
+                                var info = new UserLoginInfo("AzureAD", nameId, "EntraID");
+                                var addLoginResult = await userManager.AddLoginAsync(user!, info);
+                                if (!addLoginResult.Succeeded)
+                                {
+                                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                                    logger.LogWarning("Failed to add external login for user {Email}: {Errors}", email, string.Join(';', addLoginResult.Errors.Select(e => e.Description)));
+                                }
+                            }
+                        }
+
+                        try
+                        {
+                            // Persist only if not already present to avoid duplicates
+                            var existingAccess = await userManager.GetAuthenticationTokenAsync(user!, "AzureAD", "access_token");
+                            var existingRefresh = await userManager.GetAuthenticationTokenAsync(user!, "AzureAD", "refresh_token");
+                            var existingId = await userManager.GetAuthenticationTokenAsync(user!, "AzureAD", "id_token");
+
+                            if (string.IsNullOrWhiteSpace(existingAccess) && !string.IsNullOrWhiteSpace(at))
+                                await userManager.SetAuthenticationTokenAsync(user!, "AzureAD", "access_token", at!);
+                            if (string.IsNullOrWhiteSpace(existingRefresh) && !string.IsNullOrWhiteSpace(rt))
+                                await userManager.SetAuthenticationTokenAsync(user!, "AzureAD", "refresh_token", rt!);
+                            if (string.IsNullOrWhiteSpace(existingId) && !string.IsNullOrWhiteSpace(idt))
+                                await userManager.SetAuthenticationTokenAsync(user!, "AzureAD", "id_token", idt!);
+                        }
+                        catch (Exception ex)
+                        {
+                            var tokenLogger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                            tokenLogger.LogWarning(ex, "Failed to persist external tokens for user {Email}", email);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                    logger.LogError(ex, "Error redeeming authorization code");
+                }
+            },
             OnTokenValidated = async context =>
             {
                 try
@@ -148,19 +268,26 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
                     // to the AspNetUserTokens table so the app can call APIs later without storing tokens in the cookie.
                     try
                     {
-                        var accessToken = context.ProtocolMessage?.AccessToken;
-                        var refreshToken = context.ProtocolMessage?.RefreshToken;
-                        var idToken = context.ProtocolMessage?.IdToken;
+                        // Read tokens that the middleware persisted to the authentication properties
+                        var tokens = context.Properties?.GetTokens();
+                        var accessToken = tokens?.FirstOrDefault(t => t.Name == "access_token")?.Value;
+                        var refreshToken = tokens?.FirstOrDefault(t => t.Name == "refresh_token")?.Value;
+                        var idToken = tokens?.FirstOrDefault(t => t.Name == "id_token")?.Value;
 
-                        if (!string.IsNullOrWhiteSpace(accessToken))
+                        // Only persist if not already stored (idempotent). AuthorizationCodeReceived may have already saved them.
+                        var existingAccess = await userManager.GetAuthenticationTokenAsync(user, "AzureAD", "access_token");
+                        var existingRefresh = await userManager.GetAuthenticationTokenAsync(user, "AzureAD", "refresh_token");
+                        var existingId = await userManager.GetAuthenticationTokenAsync(user, "AzureAD", "id_token");
+
+                        if (string.IsNullOrWhiteSpace(existingAccess) && !string.IsNullOrWhiteSpace(accessToken))
                         {
                             await userManager.SetAuthenticationTokenAsync(user, "AzureAD", "access_token", accessToken);
                         }
-                        if (!string.IsNullOrWhiteSpace(refreshToken))
+                        if (string.IsNullOrWhiteSpace(existingRefresh) && !string.IsNullOrWhiteSpace(refreshToken))
                         {
                             await userManager.SetAuthenticationTokenAsync(user, "AzureAD", "refresh_token", refreshToken);
                         }
-                        if (!string.IsNullOrWhiteSpace(idToken))
+                        if (string.IsNullOrWhiteSpace(existingId) && !string.IsNullOrWhiteSpace(idToken))
                         {
                             await userManager.SetAuthenticationTokenAsync(user, "AzureAD", "id_token", idToken);
                         }
