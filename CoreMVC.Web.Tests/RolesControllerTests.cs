@@ -92,8 +92,8 @@ public class RolesControllerTests
         A.CallTo(() => userManager.Users).Returns(users.AsQueryable());
         A.CallTo(() => userManager.IsInRoleAsync(user1, "Admin")).Returns(Task.FromResult(true));
         A.CallTo(() => userManager.IsInRoleAsync(user2, "Admin")).Returns(Task.FromResult(false));
-
-        var controller = new RolesController(roleManager, userManager);
+        var tokenCacheService = A.Fake<ITokenCacheService>();
+        var controller = new RolesController(tokenCacheService, roleManager, userManager);
 
         // Act
         var result = await controller.ManageUsers(role.Id);
