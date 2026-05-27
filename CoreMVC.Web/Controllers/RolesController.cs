@@ -25,16 +25,16 @@ public class RolesController : Controller
         _tokenCache = tokenCache;
     }
 
-    // Convenience overload for tests that don't provide an ITokenCacheService
-    public RolesController(RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
-    {
-        ArgumentNullException.ThrowIfNull(roleManager);
-        ArgumentNullException.ThrowIfNull(userManager);
+    //// Convenience overload for tests that don't provide an ITokenCacheService
+    //public RolesController(RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
+    //{
+    //    ArgumentNullException.ThrowIfNull(roleManager);
+    //    ArgumentNullException.ThrowIfNull(userManager);
 
-        _roleManager = roleManager;
-        _userManager = userManager;
-        _tokenCache = null;
-    }
+    //    _roleManager = roleManager;
+    //    _userManager = userManager;
+    //    _tokenCache = null;
+    //}
 
     /// <summary>
     /// Lists all roles.

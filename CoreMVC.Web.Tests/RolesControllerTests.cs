@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using CoreMVC.Web.Controllers;
 using CoreMVC.Web.Models;
 using Xunit;
+using CoreMVC.Application.Interfaces;
 
 namespace CoreMVC.Web.Tests;
 
@@ -60,8 +61,8 @@ public class RolesControllerTests
         var userStore = A.Fake<IUserStore<IdentityUser>>();
         var userManager = A.Fake<UserManager<IdentityUser>>(x => x.WithArgumentsForConstructor(() =>
             new UserManager<IdentityUser>(userStore, null, null, null, null, null, null, null, null)));
-
-        var controller = new RolesController(roleManager, userManager);
+        var tokenCacheService = A.Fake<ITokenCacheService>();
+        var controller = new RolesController(tokenCacheService, roleManager, userManager);
 
         // Act
         var result = await controller.Index();

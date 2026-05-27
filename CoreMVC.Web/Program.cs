@@ -1,9 +1,12 @@
 ﻿using CoreMVC.Application.Interfaces;
+using CoreMVC.Domain.Authorization;
+using CoreMVC.Infrastructure.Authorization;
 using CoreMVC.Infrastructure.Data;
 using CoreMVC.Infrastructure.Services;
 using CoreMVC.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -223,6 +226,24 @@ builder.Services.AddTransient<CoreMVC.Application.Interfaces.IEmailSender, CoreM
 builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, CoreMVC.Infrastructure.Services.SmtpEmailSender>();
 builder.Services.AddDistributedMemoryCache(); // or Redis in production
 builder.Services.AddScoped<ITokenCacheService, TokenCacheService>();
+// Register ICurrentUserService
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+// Register permission-based policies
+builder.Services.AddAuthorization(options =>
+{
+    // Dynamically register a policy per permission constant
+    foreach (var permission in typeof(Permissions)
+        .GetNestedTypes()
+        .SelectMany(t => t.GetFields())
+        .Select(f => f.GetValue(null)?.ToString())
+        .Where(v => v != null))
+    {
+        options.AddPolicy(permission!, policy =>
+            policy.Requirements.Add(new PermissionRequirement(permission!)));
+    }
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
