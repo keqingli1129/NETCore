@@ -12,8 +12,9 @@ public class RolesController : Controller
 {
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly ITokenCacheService _tokenCache;
+    private readonly ITokenCacheService? _tokenCache;
 
+    // Constructor used by the application DI (includes token cache)
     public RolesController(ITokenCacheService tokenCache, RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
     {
         ArgumentNullException.ThrowIfNull(roleManager);
@@ -22,6 +23,17 @@ public class RolesController : Controller
         _roleManager = roleManager;
         _userManager = userManager;
         _tokenCache = tokenCache;
+    }
+
+    // Convenience overload for tests that don't provide an ITokenCacheService
+    public RolesController(RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
+    {
+        ArgumentNullException.ThrowIfNull(roleManager);
+        ArgumentNullException.ThrowIfNull(userManager);
+
+        _roleManager = roleManager;
+        _userManager = userManager;
+        _tokenCache = null;
     }
 
     /// <summary>
