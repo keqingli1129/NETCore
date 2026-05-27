@@ -1,3 +1,5 @@
+using CoreMVC.Application.Interfaces;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,14 +12,16 @@ public class RolesController : Controller
 {
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly ITokenCacheService _tokenCache;
 
-    public RolesController(RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
+    public RolesController(ITokenCacheService tokenCache, RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
     {
         ArgumentNullException.ThrowIfNull(roleManager);
         ArgumentNullException.ThrowIfNull(userManager);
 
         _roleManager = roleManager;
         _userManager = userManager;
+        _tokenCache = tokenCache;
     }
 
     /// <summary>
@@ -25,7 +29,23 @@ public class RolesController : Controller
     /// </summary>
     public async Task<IActionResult> Index()
     {
+        //var userId = _userManager.GetUserId(User)!;
+        //var accessToken = await _tokenCache.GetAccessTokenAsync(userId);
+
+        //if (string.IsNullOrEmpty(accessToken))
+        //{
+        //    // Token expired or user logged in via a different provider
+        //    // Redirect to re-authenticate or handle gracefully
+        //    // Force re-authentication — signs out and sends to login
+        //    //await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        //    return RedirectToPage("/Account/Login", new { area = "Identity" });
+        //}
+        // Use the token — e.g. call Microsoft Graph
+        // var graphClient = new HttpClient();
+        // graphClient.DefaultRequestHeaders.Authorization =
+        //     new AuthenticationHeaderValue("Bearer", accessToken);
         var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
+        //ViewBag.AccessToken = accessToken; // Pass token to view if needed for API calls
         return View(roles);
     }
 

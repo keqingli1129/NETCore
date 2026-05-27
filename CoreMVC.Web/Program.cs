@@ -1,12 +1,14 @@
-using Microsoft.EntityFrameworkCore;
+﻿using CoreMVC.Application.Interfaces;
 using CoreMVC.Infrastructure.Data;
-using Microsoft.AspNetCore.Identity;
-using CoreMVC.Application.Interfaces;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using CoreMVC.Infrastructure.Services;
+using CoreMVC.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System;
-using CoreMVC.Web;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -70,6 +72,7 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
     googleConfigured = true;
 }
 
+//builder.Services.AddDistributedMemoryCache(); // or AddStackExchangeRedisCache for production
 var azureConfigured = false;
 //  
 if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azureClientSecret) && !string.IsNullOrWhiteSpace(azureTenantId))
@@ -105,15 +108,13 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
                                 ?? context.Principal?.FindFirst("preferred_username")?.Value
                                 ?? context.Principal?.FindFirst("upn")?.Value;
 
-                    if (string.IsNullOrWhiteSpace(email))
-                    {
-                        // Nothing to do if we can't determine a user identifier
-                        return;
-                    }
+                    if (string.IsNullOrWhiteSpace(email)) return;
 
                     var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<IdentityUser>>();
                     var signInManager = context.HttpContext.RequestServices.GetRequiredService<SignInManager<IdentityUser>>();
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
+                    var cache = context.HttpContext.RequestServices.GetRequiredService<IDistributedCache>();
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                                            .CreateLogger("OpenIdConnectEvents");
 
                     var user = await userManager.FindByEmailAsync(email);
                     if (user == null)
@@ -122,36 +123,42 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
                         var createResult = await userManager.CreateAsync(user);
                         if (!createResult.Succeeded)
                         {
-                            logger.LogWarning("Failed to create local user for external login: {Errors}", string.Join(';', createResult.Errors.Select(e => e.Description)));
+                            logger.LogWarning("Failed to create local user: {Errors}",
+                                string.Join(';', createResult.Errors.Select(e => e.Description)));
                             return;
                         }
                     }
 
-                    // Link the external login if not already linked
                     var nameId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     if (!string.IsNullOrWhiteSpace(nameId))
                     {
                         var userLogins = await userManager.GetLoginsAsync(user);
-                        var alreadyLinked = userLogins.Any(l => l.LoginProvider == "AzureAD" && l.ProviderKey == nameId);
-                        if (!alreadyLinked)
+                        if (!userLogins.Any(l => l.LoginProvider == "AzureAD" && l.ProviderKey == nameId))
                         {
-                            var info = new UserLoginInfo("AzureAD", nameId, "EntraID");
-                            var addLoginResult = await userManager.AddLoginAsync(user, info);
-                            if (!addLoginResult.Succeeded)
-                            {
-                                logger.LogWarning("Failed to add external login for user {Email}: {Errors}", email, string.Join(';', addLoginResult.Errors.Select(e => e.Description)));
-                            }
+                            var addResult = await userManager.AddLoginAsync(
+                                user, new UserLoginInfo("AzureAD", nameId, "EntraID"));
+                            if (!addResult.Succeeded)
+                                logger.LogWarning("Failed to add external login for {Email}: {Errors}",
+                                    email, string.Join(';', addResult.Errors.Select(e => e.Description)));
                         }
                     }
 
-                    // Sign the user in to the application
+                    var accessToken = context.TokenEndpointResponse?.AccessToken;
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        var tokenCache = context.HttpContext.RequestServices
+                                             .GetRequiredService<ITokenCacheService>();
+                        var expiry = int.TryParse(context.TokenEndpointResponse?.ExpiresIn, out var s) ? s : 3600;
+                        await tokenCache.SetAccessTokenAsync(user.Id, accessToken, expiry);
+                    }
+
                     await signInManager.SignInAsync(user, isPersistent: false);
                 }
                 catch (Exception ex)
                 {
-                    // Let the normal pipeline handle failures, but log for diagnostics
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("OpenIdConnectEvents");
-                    logger.LogError(ex, "Error processing EntraID token validation callback");
+                    context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("OpenIdConnectEvents")
+                        .LogError(ex, "Error processing EntraID token validation callback");
                 }
             },
             OnRemoteFailure = async context =>
@@ -214,15 +221,27 @@ if (!string.IsNullOrWhiteSpace(azureClientId) && !string.IsNullOrWhiteSpace(azur
 // Register the Infrastructure implementation for both the application abstraction and Identity UI
 builder.Services.AddTransient<CoreMVC.Application.Interfaces.IEmailSender, CoreMVC.Infrastructure.Services.SmtpEmailSender>();
 builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, CoreMVC.Infrastructure.Services.SmtpEmailSender>();
-
+builder.Services.AddDistributedMemoryCache(); // or Redis in production
+builder.Services.AddScoped<ITokenCacheService, TokenCacheService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
+    // Production — real Redis
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = builder.Configuration.GetConnectionString("Redis");
+        options.InstanceName = "CoreMVC:"; // optional key prefix
+    });
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+    
 }
 
 if (!googleConfigured)
