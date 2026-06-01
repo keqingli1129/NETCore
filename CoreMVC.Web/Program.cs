@@ -228,6 +228,10 @@ builder.Services.AddDistributedMemoryCache(); // or Redis in production
 builder.Services.AddScoped<ITokenCacheService, TokenCacheService>();
 // Register ICurrentUserService
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("OrdersApi", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["OrdersApi:BaseUrl"]!);
+});
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 // Register permission-based policies
