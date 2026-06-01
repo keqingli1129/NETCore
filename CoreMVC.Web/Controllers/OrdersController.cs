@@ -18,16 +18,29 @@ public class OrdersController : Controller
     }
 
     /// <summary>
-    /// Lists all orders with customer and employee info.
+    /// Lists orders with paging, customer, and employee info.
     /// </summary>
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
     {
+        pageNumber = Math.Max(1, pageNumber);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var totalCount = await _context.Orders.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
         var orders = await _context.Orders
             .Include(o => o.Customer)
             .Include(o => o.Employee)
             .Include(o => o.ShipViaNavigation)
             .OrderByDescending(o => o.OrderDate)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        ViewData["PageNumber"] = pageNumber;
+        ViewData["PageSize"] = pageSize;
+        ViewData["TotalPages"] = totalPages;
+        ViewData["TotalCount"] = totalCount;
 
         return View(orders);
     }
