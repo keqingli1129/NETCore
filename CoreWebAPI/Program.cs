@@ -1,10 +1,12 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using CoreMVC.Application;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using CoreWebAPI;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -44,7 +46,7 @@ builder.Services.AddControllers()
     });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
+builder.Services.AddAppDI();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
