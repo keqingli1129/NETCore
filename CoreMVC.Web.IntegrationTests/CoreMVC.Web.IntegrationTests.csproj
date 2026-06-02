@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="4.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
     <!-- Use stable xUnit 2.x packages to avoid deprecation warning for 2.5.0 while keeping compatibility -->
