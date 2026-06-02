@@ -8,11 +8,11 @@ namespace CoreWebAPI
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddAppDI(this IServiceCollection services)
+        public static IServiceCollection AddAppDI(this IServiceCollection services, IConfiguration configuration)
         {
             //services.AddScoped<IPersonService, PersonService>();
             services.AddApplicationDI()
-                .AddInfrastructureDI()
+                .AddInfrastructureDI(configuration)
                 .AddDomainDI()
                 .AddSharedKernelDI();
             return services;
