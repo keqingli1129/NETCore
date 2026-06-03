@@ -15,9 +15,14 @@ variables:
  buildConfiguration: 'Release'
  solution: '**/NETCore.sln'
  project: '**/CoreMVC.csproj'
- 
+
 steps:
 - task: NuGetToolInstaller@1
   inputs:
     versionSpec: '>=4.0.0-0'
     checkLatest: true
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
+    restoreSolution: '**/*.sln'
+    feedsToUse: 'select'
