@@ -3,3 +3,21 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+trigger:
+ none
+
+
+pool:
+ vmImage: 'windows-latest'
+
+variables:
+ buildPlatform: 'Any CPU'
+ buildConfiguration: 'Release'
+ solution: '**/NETCore.sln'
+ project: '**/CoreMVC.csproj'
+ 
+steps:
+- task: NuGetToolInstaller@1
+  inputs:
+    versionSpec: '>=4.0.0-0'
+    checkLatest: true
