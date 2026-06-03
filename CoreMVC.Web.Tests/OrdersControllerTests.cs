@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using FakeItEasy;
 using FluentAssertions;
@@ -16,23 +19,34 @@ namespace CoreMVC.Web.Tests;
 public class OrdersControllerTests
 {
     [Fact]
-    public async Task Index_ReturnsViewWithOrdersOrderedByDateDesc()
+    public async Task Index_ReturnsViewWithOrdersFromApi()
     {
         // Arrange
         var order1 = new Order { OrderId = 1, OrderDate = new DateTime(2023, 1, 1), ShipCity = "A" };
         var order2 = new Order { OrderId = 2, OrderDate = new DateTime(2024, 1, 1), ShipCity = "B" };
-        var orders = new[] { order1, order2 };
+        var orders = new[] { order2, order1 };
 
-        // Use an in-memory DbContext for more reliable behavior
-        var options = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<ApplicationDbContext>()
+        var json = JsonSerializer.Serialize(orders);
+        var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
+        responseMessage.Headers.Add("X-Total-Count", "2");
+
+        var httpClient = new HttpClient(new FakeHttpMessageHandler(responseMessage))
+        {
+            BaseAddress = new Uri("https://localhost:7127")
+        };
+
+        var httpClientFactory = A.Fake<IHttpClientFactory>();
+        A.CallTo(() => httpClientFactory.CreateClient("OrdersApi")).Returns(httpClient);
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-
         using var context = new ApplicationDbContext(options);
-        context.Orders.AddRange(orders);
-        context.SaveChanges();
 
-        var controller = new OrdersController(context);
+        var controller = new OrdersController(context, httpClientFactory);
 
         // Act
         var result = await controller.Index();
@@ -40,7 +54,7 @@ public class OrdersControllerTests
         // Assert
         var viewResult = result.Should().BeOfType<ViewResult>().Subject;
         var model = viewResult.Model.Should().BeAssignableTo<IEnumerable<Order>>().Subject;
-        model.Select(o => o.OrderId).Should().BeInDescendingOrder();
+        model.Should().HaveCount(2);
     }
 
     [Fact]
@@ -57,15 +71,26 @@ public class OrdersControllerTests
             ShipViaNavigation = new Shipper { ShipperId = 1, CompanyName = "FastShip" }
         };
 
-        var options = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<ApplicationDbContext>()
+        var json = JsonSerializer.Serialize(order);
+        var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
+
+        var httpClient = new HttpClient(new FakeHttpMessageHandler(responseMessage))
+        {
+            BaseAddress = new Uri("https://localhost:7127")
+        };
+
+        var httpClientFactory = A.Fake<IHttpClientFactory>();
+        A.CallTo(() => httpClientFactory.CreateClient("OrdersApi")).Returns(httpClient);
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-
         using var context = new ApplicationDbContext(options);
-        context.Orders.Add(order);
-        context.SaveChanges();
 
-        var controller = new OrdersController(context);
+        var controller = new OrdersController(context, httpClientFactory);
 
         // Act
         var result = await controller.Details(order.OrderId);
@@ -73,9 +98,20 @@ public class OrdersControllerTests
         // Assert
         var viewResult = result.Should().BeOfType<ViewResult>().Subject;
         var model = viewResult.Model.Should().BeAssignableTo<Order>().Subject;
-        model.OrderId.Should().Be(order.OrderId);
+        model.OrderId.Should().Be(42);
         model.Customer.CompanyName.Should().Be("Acme");
         model.Employee.LastName.Should().Be("Doe");
         model.ShipViaNavigation.CompanyName.Should().Be("FastShip");
+    }
+}
+
+/// <summary>
+/// A simple HttpMessageHandler that returns a preconfigured response.
+/// </summary>
+internal sealed class FakeHttpMessageHandler(HttpResponseMessage response) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
+    {
+        return Task.FromResult(response);
     }
 }

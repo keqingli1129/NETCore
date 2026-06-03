@@ -4,6 +4,7 @@
 
 using System;
 using System.Threading.Tasks;
+using CoreMVC.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,15 +17,21 @@ namespace CoreMVC.Web.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ILogger<LogoutModel> _logger;
-
-        public LogoutModel(SignInManager<IdentityUser> signInManager, ILogger<LogoutModel> logger)
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ITokenCacheService _tokenCache;
+        public LogoutModel(SignInManager<IdentityUser> signInManager, ILogger<LogoutModel> logger, UserManager<IdentityUser> userManager, ITokenCacheService tokenCache)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
+            _tokenCache = tokenCache;
             _logger = logger;
         }
 
         public async Task<IActionResult> OnPost(string returnUrl = null)
         {
+            var userId = _userManager.GetUserId(User);
+            if (userId != null)
+                await _tokenCache.RemoveAccessTokenAsync(userId);
             await _signInManager.SignOutAsync();
             _logger.LogInformation("User logged out.");
             if (returnUrl != null)

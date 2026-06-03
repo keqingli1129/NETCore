@@ -1,0 +1,7 @@
+﻿@using CoreMVC.Domain.Authorization
+@inject CoreMVC.Application.Interfaces.ICurrentUserService CurrentUser
+
+@if (CurrentUser.HasPermission(Permissions.Users.Create))
+{
+    <a asp-action="Create">Add User</a>
+}

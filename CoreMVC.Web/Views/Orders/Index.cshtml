@@ -54,3 +54,28 @@
         }
     </tbody>
 </table>
+
+@{
+    var pageNumber = (int)ViewData["PageNumber"]!;
+    var totalPages = (int)ViewData["TotalPages"]!;
+    var pageSize = (int)ViewData["PageSize"]!;
+    var totalCount = (int)ViewData["TotalCount"]!;
+}
+
+<nav aria-label="Order pagination">
+    <ul class="pagination">
+        <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="Index" asp-route-pageNumber="@(pageNumber - 1)" asp-route-pageSize="@pageSize">Previous</a>
+        </li>
+        @for (var i = 1; i <= totalPages; i++)
+        {
+            <li class="page-item @(i == pageNumber ? "active" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@i" asp-route-pageSize="@pageSize">@i</a>
+            </li>
+        }
+        <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="Index" asp-route-pageNumber="@(pageNumber + 1)" asp-route-pageSize="@pageSize">Next</a>
+        </li>
+    </ul>
+</nav>
+<p class="text-muted">Showing page @pageNumber of @totalPages (@totalCount total orders)</p>

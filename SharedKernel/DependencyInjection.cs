@@ -1,0 +1,14 @@
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace SharedKernel;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddSharedKernelDI(this IServiceCollection services)
+    {
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+
+        return services;
+    }
+}

@@ -1,3 +1,6 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -11,23 +14,47 @@ namespace CoreMVC.Web.Controllers;
 public class OrdersController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public OrdersController(ApplicationDbContext context)
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+    };
+
+    public OrdersController(ApplicationDbContext context, IHttpClientFactory httpClientFactory)
     {
         _context = context;
+        _httpClientFactory = httpClientFactory;
     }
 
     /// <summary>
-    /// Lists all orders with customer and employee info.
+    /// Lists orders by calling the Orders API with paging support.
     /// </summary>
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
     {
-        var orders = await _context.Orders
-            .Include(o => o.Customer)
-            .Include(o => o.Employee)
-            .Include(o => o.ShipViaNavigation)
-            .OrderByDescending(o => o.OrderDate)
-            .ToListAsync();
+        pageNumber = Math.Max(1, pageNumber);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var client = _httpClientFactory.CreateClient("OrdersApi");
+        using var response = await client.GetAsync($"api/Orders?pageNumber={pageNumber}&pageSize={pageSize}");
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        var orders = await JsonSerializer.DeserializeAsync<List<Order>>(stream, s_jsonOptions) ?? [];
+
+        var totalCount = 0;
+        if (response.Headers.TryGetValues("X-Total-Count", out var totalCountValues))
+        {
+            int.TryParse(totalCountValues.FirstOrDefault(), out totalCount);
+        }
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        ViewData["PageNumber"] = pageNumber;
+        ViewData["PageSize"] = pageSize;
+        ViewData["TotalPages"] = totalPages;
+        ViewData["TotalCount"] = totalCount;
 
         return View(orders);
     }
@@ -42,13 +69,18 @@ public class OrdersController : Controller
             return NotFound();
         }
 
-        var order = await _context.Orders
-            .Include(o => o.Customer)
-            .Include(o => o.Employee)
-            .Include(o => o.ShipViaNavigation)
-            .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.Product)
-            .FirstOrDefaultAsync(o => o.OrderId == id);
+        var client = _httpClientFactory.CreateClient("OrdersApi");
+        using var response = await client.GetAsync($"api/Orders/{id}");
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return NotFound();
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        var order = await JsonSerializer.DeserializeAsync<Order>(stream, s_jsonOptions);
 
         if (order is null)
         {
@@ -68,7 +100,7 @@ public class OrdersController : Controller
     }
 
     /// <summary>
-    /// Handles order creation.
+    /// Handles order creation via the API.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -81,8 +113,12 @@ public class OrdersController : Controller
 
         if (ModelState.IsValid)
         {
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            var client = _httpClientFactory.CreateClient("OrdersApi");
+            var json = JsonSerializer.Serialize(order, s_jsonOptions);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync("api/Orders", content);
+            response.EnsureSuccessStatusCode();
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -100,7 +136,19 @@ public class OrdersController : Controller
             return NotFound();
         }
 
-        var order = await _context.Orders.FindAsync(id);
+        var client = _httpClientFactory.CreateClient("OrdersApi");
+        using var response = await client.GetAsync($"api/Orders/{id}");
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return NotFound();
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        var order = await JsonSerializer.DeserializeAsync<Order>(stream, s_jsonOptions);
+
         if (order is null)
         {
             return NotFound();
@@ -111,7 +159,7 @@ public class OrdersController : Controller
     }
 
     /// <summary>
-    /// Handles order update.
+    /// Handles order update via the API.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -129,21 +177,17 @@ public class OrdersController : Controller
 
         if (ModelState.IsValid)
         {
-            try
-            {
-                _context.Update(order);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await OrderExistsAsync(order.OrderId))
-                {
-                    return NotFound();
-                }
+            var client = _httpClientFactory.CreateClient("OrdersApi");
+            var json = JsonSerializer.Serialize(order, s_jsonOptions);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await client.PutAsync($"api/Orders/{id}", content);
 
-                throw;
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return NotFound();
             }
 
+            response.EnsureSuccessStatusCode();
             return RedirectToAction(nameof(Index));
         }
 
@@ -161,11 +205,18 @@ public class OrdersController : Controller
             return NotFound();
         }
 
-        var order = await _context.Orders
-            .Include(o => o.Customer)
-            .Include(o => o.Employee)
-            .Include(o => o.ShipViaNavigation)
-            .FirstOrDefaultAsync(o => o.OrderId == id);
+        var client = _httpClientFactory.CreateClient("OrdersApi");
+        using var response = await client.GetAsync($"api/Orders/{id}");
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return NotFound();
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        var order = await JsonSerializer.DeserializeAsync<Order>(stream, s_jsonOptions);
 
         if (order is null)
         {
@@ -176,29 +227,22 @@ public class OrdersController : Controller
     }
 
     /// <summary>
-    /// Handles order deletion.
+    /// Handles order deletion via the API.
     /// </summary>
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var order = await _context.Orders
-            .Include(o => o.OrderDetails)
-            .FirstOrDefaultAsync(o => o.OrderId == id);
+        var client = _httpClientFactory.CreateClient("OrdersApi");
+        using var response = await client.DeleteAsync($"api/Orders/{id}");
 
-        if (order is not null)
+        // Ignore NotFound — order may have already been deleted.
+        if (response.StatusCode != HttpStatusCode.NotFound)
         {
-            _context.OrderDetails.RemoveRange(order.OrderDetails);
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
+            response.EnsureSuccessStatusCode();
         }
 
         return RedirectToAction(nameof(Index));
-    }
-
-    private async Task<bool> OrderExistsAsync(int id)
-    {
-        return await _context.Orders.AnyAsync(o => o.OrderId == id);
     }
 
     private void PopulateDropdowns(Order? order = null)
