@@ -1,3 +1,5 @@
-﻿namespace CoreMVC.SharedKernel;
+﻿using MediatR;
 
-public interface IDomainEvent;
+namespace CoreMVC.SharedKernel;
+
+public interface IDomainEvent : INotification;

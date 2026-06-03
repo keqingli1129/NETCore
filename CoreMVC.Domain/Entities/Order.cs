@@ -2,10 +2,11 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using CoreMVC.SharedKernel;
 
 namespace CoreMVC.Domain.Entities;
 
-public partial class Order
+public partial class Order : Entity
 {
     public int OrderId { get; set; }
 
