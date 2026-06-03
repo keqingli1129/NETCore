@@ -10,7 +10,9 @@ using CoreMVC.Web.Controllers;
 using CoreMVC.Infrastructure.Data;
 using CoreMVC.Domain.Entities;
 using Xunit;
+using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 
 namespace CoreMVC.Web.Tests;
 
@@ -73,14 +75,28 @@ public class OrdersControllerFakeTests
         // Arrange
         var order1 = new Order { OrderId = 1, OrderDate = new DateTime(2023, 1, 1), ShipCity = "A" };
         var order2 = new Order { OrderId = 2, OrderDate = new DateTime(2024, 1, 1), ShipCity = "B" };
-        var orders = new[] { order1, order2 };
+        var orders = new[] { order2, order1 };
 
-        var ordersSet = CreateFakeDbSet(orders);
+        var json = JsonSerializer.Serialize(orders);
+        var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
+        responseMessage.Headers.Add("X-Total-Count", "2");
 
-        var context = A.Fake<ApplicationDbContext>();
-        A.CallTo(() => context.Orders).Returns(ordersSet);
+        var httpClient = new HttpClient(new FakeHttpMessageHandler(responseMessage))
+        {
+            BaseAddress = new Uri("https://localhost:7127")
+        };
 
         var httpClientFactory = A.Fake<IHttpClientFactory>();
+        A.CallTo(() => httpClientFactory.CreateClient("OrdersApi")).Returns(httpClient);
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        using var context = new ApplicationDbContext(options);
+
         var controller = new OrdersController(context, httpClientFactory);
 
         // Act
@@ -106,13 +122,25 @@ public class OrdersControllerFakeTests
             ShipViaNavigation = new Shipper { ShipperId = 1, CompanyName = "FastShip" }
         };
 
-        var orders = new[] { order };
-        var ordersSet = CreateFakeDbSet(orders);
+        var json = JsonSerializer.Serialize(order);
+        var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
 
-        var context = A.Fake<ApplicationDbContext>();
-        A.CallTo(() => context.Orders).Returns(ordersSet);
+        var httpClient = new HttpClient(new FakeHttpMessageHandler(responseMessage))
+        {
+            BaseAddress = new Uri("https://localhost:7127")
+        };
 
         var httpClientFactory = A.Fake<IHttpClientFactory>();
+        A.CallTo(() => httpClientFactory.CreateClient("OrdersApi")).Returns(httpClient);
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        using var context = new ApplicationDbContext(options);
+
         var controller = new OrdersController(context, httpClientFactory);
 
         // Act

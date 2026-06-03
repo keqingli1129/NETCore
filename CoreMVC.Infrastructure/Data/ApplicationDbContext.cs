@@ -19,14 +19,6 @@ namespace CoreMVC.Infrastructure.Data
         {
         }
 
-        /// <summary>
-        /// Constructor for derived types (e.g. proxies created by test frameworks).
-        /// </summary>
-        protected ApplicationDbContext(DbContextOptions options)
-            : base(options)
-        {
-        }
-
         public virtual DbSet<AlphabeticalListOfProduct> AlphabeticalListOfProducts { get; set; }
         public virtual DbSet<Category> Categories { get; set; }
         public virtual DbSet<CategorySalesFor1997> CategorySalesFor1997s { get; set; }
