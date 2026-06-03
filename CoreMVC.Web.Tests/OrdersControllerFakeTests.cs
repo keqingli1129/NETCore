@@ -10,6 +10,7 @@ using CoreMVC.Web.Controllers;
 using CoreMVC.Infrastructure.Data;
 using CoreMVC.Domain.Entities;
 using Xunit;
+using System.Net.Http;
 
 namespace CoreMVC.Web.Tests;
 
@@ -79,7 +80,8 @@ public class OrdersControllerFakeTests
         var context = A.Fake<ApplicationDbContext>();
         A.CallTo(() => context.Orders).Returns(ordersSet);
 
-        var controller = new OrdersController(context);
+        var httpClientFactory = A.Fake<IHttpClientFactory>();
+        var controller = new OrdersController(context, httpClientFactory);
 
         // Act
         var result = await controller.Index();
@@ -110,7 +112,8 @@ public class OrdersControllerFakeTests
         var context = A.Fake<ApplicationDbContext>();
         A.CallTo(() => context.Orders).Returns(ordersSet);
 
-        var controller = new OrdersController(context);
+        var httpClientFactory = A.Fake<IHttpClientFactory>();
+        var controller = new OrdersController(context, httpClientFactory);
 
         // Act
         var result = await controller.Details(order.OrderId);
