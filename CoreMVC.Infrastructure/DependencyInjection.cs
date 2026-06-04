@@ -1,6 +1,7 @@
 ﻿using CoreMVC.Application.Interfaces;
 using CoreMVC.Infrastructure.Authorization;
 using CoreMVC.Infrastructure.Data;
+using CoreMVC.Infrastructure.Repositories;
 using CoreMVC.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -43,6 +44,9 @@ public static class DependencyInjection
 
         // Permission authorization handler
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+        // Repositories
+        services.AddScoped<IOrderRepository, OrderRepository>();
 
         return services;
     }
