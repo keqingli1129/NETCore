@@ -1,9 +1,11 @@
-﻿using CoreMVC.Infrastructure;
+﻿using CoreMVC.Application;
+using CoreMVC.Infrastructure;
 using CoreMVC.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Register services from each layer
+builder.Services.AddApplicationDI();
 builder.Services.AddWebDI();
 builder.Services.AddInfrastructureDI(builder.Configuration);
 builder.Services.AddExternalAuthentication(builder.Configuration, out var googleConfigured, out var azureConfigured);
