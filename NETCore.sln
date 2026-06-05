@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{48FD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreWebAPI.Tests", "CoreWebAPI.Tests\CoreWebAPI.Tests.csproj", "{C8431BD6-E8D2-44FE-A792-FAEA6CCD076A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreWebAPI.IntegrationTests", "CoreWebAPI.IntegrationTests\CoreWebAPI.IntegrationTests.csproj", "{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -144,6 +146,18 @@ Global
 		{C8431BD6-E8D2-44FE-A792-FAEA6CCD076A}.Release|x64.Build.0 = Release|Any CPU
 		{C8431BD6-E8D2-44FE-A792-FAEA6CCD076A}.Release|x86.ActiveCfg = Release|Any CPU
 		{C8431BD6-E8D2-44FE-A792-FAEA6CCD076A}.Release|x86.Build.0 = Release|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Debug|x64.Build.0 = Debug|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Debug|x86.Build.0 = Debug|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Release|x64.ActiveCfg = Release|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Release|x64.Build.0 = Release|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Release|x86.ActiveCfg = Release|Any CPU
+		{E5FE3136-09CA-BD8C-7294-AA5CF19C8729}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
