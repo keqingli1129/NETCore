@@ -17,19 +17,29 @@ namespace CoreWebAPI.IntegrationTests;
 /// </summary>
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _dbName = $"IntegrationTestDb_{Guid.NewGuid():N}";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
         {
-            // Remove the real ApplicationDbContext registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor != null)
-                services.Remove(descriptor);
+            // Remove ALL DbContext-related registrations to avoid dual-provider conflicts.
+            // In EF Core 9+, AddDbContext separately registers IDbContextOptionsConfiguration<T>
+            // that holds the options action (e.g., UseSqlServer). Both must be removed to
+            // prevent the SQL Server provider from persisting alongside the InMemory provider.
+            var descriptorsToRemove = services
+                .Where(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>)
+                         || (d.ServiceType.IsGenericType
+                             && d.ServiceType.GetGenericTypeDefinition().Name == "IDbContextOptionsConfiguration`1"
+                             && d.ServiceType.GenericTypeArguments[0] == typeof(ApplicationDbContext)))
+                .ToList();
 
-            // Add an in-memory database for testing
+            foreach (var d in descriptorsToRemove)
+                services.Remove(d);
+
+            // Add an in-memory database for testing (unique per factory instance for isolation)
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("IntegrationTestDb"));
+                options.UseInMemoryDatabase(_dbName));
 
             // Add a test authentication scheme
             services.AddAuthentication("Test")

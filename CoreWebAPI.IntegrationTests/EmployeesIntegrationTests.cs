@@ -17,7 +17,7 @@ namespace CoreWebAPI.IntegrationTests;
 /// FakeItEasy is used to create fake services where needed, while the
 /// <see cref="CustomWebApplicationFactory"/> supplies a test auth scheme.
 /// </summary>
-public class EmployeesIntegrationTests : IClassFixture<CustomWebApplicationFactory>
+public class EmployeesIntegrationTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifetime
 {
     private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -27,6 +27,16 @@ public class EmployeesIntegrationTests : IClassFixture<CustomWebApplicationFacto
         _factory = factory;
         _client = factory.CreateClient();
     }
+
+    public async ValueTask InitializeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Employees.RemoveRange(db.Employees);
+        await db.SaveChangesAsync();
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task GetEmployees_WhenEmpty_ReturnsOkWithEmptyPage()

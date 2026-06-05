@@ -41,7 +41,7 @@ public class WeatherForecastIntegrationTests : IClassFixture<CustomWebApplicatio
     }
 }
 
-public class OrdersIntegrationTests : IClassFixture<CustomWebApplicationFactory>
+public class OrdersIntegrationTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifetime
 {
     private readonly CustomWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -51,6 +51,16 @@ public class OrdersIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         _factory = factory;
         _client = factory.CreateClient();
     }
+
+    public async ValueTask InitializeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.Orders.RemoveRange(db.Orders);
+        await db.SaveChangesAsync();
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task GetOrders_WhenEmpty_ReturnsOkWithEmptyList()
