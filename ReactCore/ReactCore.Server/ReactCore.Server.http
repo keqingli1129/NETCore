@@ -1,6 +1,0 @@
-@ReactCore.Server_HostAddress = http://localhost:5205
-
-GET {{ReactCore.Server_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
