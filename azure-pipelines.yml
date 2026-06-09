@@ -24,5 +24,10 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'restore'
-    restoreSolution: '**/*.sln'
+    restoreSolution: '$(solution)'
     feedsToUse: 'select'
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --no-restore'
