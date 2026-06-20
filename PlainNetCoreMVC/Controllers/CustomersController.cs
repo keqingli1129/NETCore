@@ -12,10 +12,13 @@ public class CustomersController : Controller
         _context = context;
     }
 
+    private const int PageSize = 10;
+
     // GET: CUSTOMERS
-    public async Task<IActionResult> Index()    
+    public async Task<IActionResult> Index(int? pageNumber)
     {
-        return View(await _context.Customers.ToListAsync());
+        var customers = _context.Customers.OrderBy(c => c.CompanyName);
+        return View(await PaginatedList<Customer>.CreateAsync(customers, pageNumber ?? 1, PageSize));
     }
 
     // GET: CUSTOMERS/Details/5
