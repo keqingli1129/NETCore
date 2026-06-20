@@ -1,17 +1,17 @@
-@model CoreMVC.Domain.Entities.Order
+@model CoreMVC.Contracts.Orders.CreateOrderDto
 
 @{
-    ViewData["Title"] = $"Edit Order #{Model.OrderId}";
+    ViewData["Title"] = $"Edit Order #{ViewData["OrderId"]}";
 }
 
-<h1>Edit Order #@Model.OrderId</h1>
+<h1>Edit Order #@ViewData["OrderId"]</h1>
 
 <hr />
 <div class="row">
     <div class="col-md-6">
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="OrderId" />
+            <input type="hidden" name="id" value="@ViewData["OrderId"]" />
 
             <div class="form-group mb-3">
                 <label asp-for="CustomerId" class="control-label">Customer</label>

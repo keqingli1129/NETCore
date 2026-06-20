@@ -1,4 +1,4 @@
-@model CoreMVC.Domain.Entities.Order
+@model CoreMVC.Contracts.Orders.OrderDto
 
 @{
     ViewData["Title"] = $"Order #{Model.OrderId}";
@@ -12,15 +12,10 @@
         <hr />
         <dl class="row">
             <dt class="col-sm-4">Customer</dt>
-            <dd class="col-sm-8">@Model.Customer?.CompanyName</dd>
+            <dd class="col-sm-8">@Model.CustomerName</dd>
 
             <dt class="col-sm-4">Employee</dt>
-            <dd class="col-sm-8">
-                @if (Model.Employee is not null)
-                {
-                    @($"{Model.Employee.FirstName} {Model.Employee.LastName}")
-                }
-            </dd>
+            <dd class="col-sm-8">@Model.EmployeeName</dd>
 
             <dt class="col-sm-4">Order Date</dt>
             <dd class="col-sm-8">@Model.OrderDate?.ToString("yyyy-MM-dd")</dd>
@@ -32,7 +27,7 @@
             <dd class="col-sm-8">@Model.ShippedDate?.ToString("yyyy-MM-dd")</dd>
 
             <dt class="col-sm-4">Ship Via</dt>
-            <dd class="col-sm-8">@Model.ShipViaNavigation?.CompanyName</dd>
+            <dd class="col-sm-8">@Model.Shipper</dd>
 
             <dt class="col-sm-4">Freight</dt>
             <dd class="col-sm-8">@Model.Freight?.ToString("C")</dd>
@@ -80,7 +75,7 @@
             @foreach (var detail in Model.OrderDetails)
             {
                 <tr>
-                    <td>@detail.Product?.ProductName</td>
+                    <td>@detail.ProductName</td>
                     <td>@detail.UnitPrice.ToString("C")</td>
                     <td>@detail.Quantity</td>
                     <td>@detail.Discount.ToString("P0")</td>

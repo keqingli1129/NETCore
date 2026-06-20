@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CoreMVC.Contracts.Auth;
 using CoreWebAPI.Controllers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;

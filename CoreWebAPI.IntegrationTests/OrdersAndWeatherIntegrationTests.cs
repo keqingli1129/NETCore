@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using CoreMVC.Contracts.Orders;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
 using FluentAssertions;
@@ -69,15 +70,16 @@ public class OrdersIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var orders = await response.Content.ReadFromJsonAsync<Order[]>();
+        var orders = await response.Content.ReadFromJsonAsync<OrderDto[]>();
         orders.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
     public async Task PostAndGetOrder_RoundTrip()
     {
-        var newOrder = new Order
+        var newOrder = new CreateOrderDto
         {
+            CustomerId = "ALFKI",
             ShipName = "Test Ship",
             ShipCity = "TestCity",
             ShipCountry = "TestCountry"
@@ -86,7 +88,7 @@ public class OrdersIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         var postResponse = await _client.PostAsJsonAsync("/api/Orders", newOrder);
         postResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var created = await postResponse.Content.ReadFromJsonAsync<Order>();
+        var created = await postResponse.Content.ReadFromJsonAsync<OrderDto>();
         created.Should().NotBeNull();
         created!.ShipName.Should().Be("Test Ship");
 

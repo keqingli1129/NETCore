@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using CoreMVC.Contracts.Auth;
 using CoreWebAPI.Controllers;
 using FakeItEasy;
 using FluentAssertions;

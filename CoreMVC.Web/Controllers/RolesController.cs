@@ -39,7 +39,7 @@ public class RolesController : Controller
     /// <summary>
     /// Lists all roles.
     /// </summary>
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
     {
         //var userId = _userManager.GetUserId(User)!;
         //var accessToken = await _tokenCache.GetAccessTokenAsync(userId);
@@ -56,7 +56,21 @@ public class RolesController : Controller
         // var graphClient = new HttpClient();
         // graphClient.DefaultRequestHeaders.Authorization =
         //     new AuthenticationHeaderValue("Bearer", accessToken);
-        var roles = await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
+        pageNumber = Math.Max(1, pageNumber);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = _roleManager.Roles.OrderBy(r => r.Name);
+        var totalCount = await query.CountAsync();
+        var roles = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        ViewData["PageNumber"] = pageNumber;
+        ViewData["PageSize"] = pageSize;
+        ViewData["TotalPages"] = (int)Math.Ceiling(totalCount / (double)pageSize);
+        ViewData["TotalCount"] = totalCount;
+
         //ViewBag.AccessToken = accessToken; // Pass token to view if needed for API calls
         return View(roles);
     }

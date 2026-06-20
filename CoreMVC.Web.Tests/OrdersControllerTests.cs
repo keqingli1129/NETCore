@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CoreMVC.Web.Controllers;
 using CoreMVC.Infrastructure.Data;
+using CoreMVC.Contracts.Orders;
 using CoreMVC.Domain.Entities;
 using Xunit;
 
@@ -22,8 +23,8 @@ public class OrdersControllerTests
     public async Task Index_ReturnsViewWithOrdersFromApi()
     {
         // Arrange
-        var order1 = new Order { OrderId = 1, OrderDate = new DateTime(2023, 1, 1), ShipCity = "A" };
-        var order2 = new Order { OrderId = 2, OrderDate = new DateTime(2024, 1, 1), ShipCity = "B" };
+        var order1 = new OrderDto { OrderId = 1, OrderDate = new DateTime(2023, 1, 1), ShipCity = "A" };
+        var order2 = new OrderDto { OrderId = 2, OrderDate = new DateTime(2024, 1, 1), ShipCity = "B" };
         var orders = new[] { order2, order1 };
 
         var json = JsonSerializer.Serialize(orders);
@@ -53,7 +54,7 @@ public class OrdersControllerTests
 
         // Assert
         var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-        var model = viewResult.Model.Should().BeAssignableTo<IEnumerable<Order>>().Subject;
+        var model = viewResult.Model.Should().BeAssignableTo<IEnumerable<OrderDto>>().Subject;
         model.Should().HaveCount(2);
     }
 
@@ -61,14 +62,14 @@ public class OrdersControllerTests
     public async Task Details_WithValidId_ReturnsViewWithOrder()
     {
         // Arrange
-        var order = new Order
+        var order = new OrderDto
         {
             OrderId = 42,
             OrderDate = new DateTime(2024, 4, 2),
             ShipCity = "City",
-            Customer = new Customer { CustomerId = "CUST42", CompanyName = "Acme" },
-            Employee = new Employee { EmployeeId = 1, FirstName = "John", LastName = "Doe" },
-            ShipViaNavigation = new Shipper { ShipperId = 1, CompanyName = "FastShip" }
+            CustomerName = "Acme",
+            EmployeeName = "John Doe",
+            Shipper = "FastShip"
         };
 
         var json = JsonSerializer.Serialize(order);
@@ -97,11 +98,11 @@ public class OrdersControllerTests
 
         // Assert
         var viewResult = result.Should().BeOfType<ViewResult>().Subject;
-        var model = viewResult.Model.Should().BeAssignableTo<Order>().Subject;
+        var model = viewResult.Model.Should().BeAssignableTo<OrderDto>().Subject;
         model.OrderId.Should().Be(42);
-        model.Customer.CompanyName.Should().Be("Acme");
-        model.Employee.LastName.Should().Be("Doe");
-        model.ShipViaNavigation.CompanyName.Should().Be("FastShip");
+        model.CustomerName.Should().Be("Acme");
+        model.EmployeeName.Should().Be("John Doe");
+        model.Shipper.Should().Be("FastShip");
     }
 }
 

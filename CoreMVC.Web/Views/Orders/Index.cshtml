@@ -1,4 +1,4 @@
-@model IEnumerable<CoreMVC.Domain.Entities.Order>
+@model IEnumerable<CoreMVC.Contracts.Orders.OrderDto>
 
 @{
     ViewData["Title"] = "Orders";
@@ -31,17 +31,12 @@
         {
             <tr>
                 <td>@item.OrderId</td>
-                <td>@item.Customer?.CompanyName</td>
-                <td>
-                    @if (item.Employee is not null)
-                    {
-                        @($"{item.Employee.FirstName} {item.Employee.LastName}")
-                    }
-                </td>
+                <td>@item.CustomerName</td>
+                <td>@item.EmployeeName</td>
                 <td>@item.OrderDate?.ToString("yyyy-MM-dd")</td>
                 <td>@item.RequiredDate?.ToString("yyyy-MM-dd")</td>
                 <td>@item.ShippedDate?.ToString("yyyy-MM-dd")</td>
-                <td>@item.ShipViaNavigation?.CompanyName</td>
+                <td>@item.Shipper</td>
                 <td>@item.Freight?.ToString("C")</td>
                 <td>@item.ShipCity</td>
                 <td>@item.ShipCountry</td>
@@ -62,20 +57,5 @@
     var totalCount = (int)ViewData["TotalCount"]!;
 }
 
-<nav aria-label="Order pagination">
-    <ul class="pagination">
-        <li class="page-item @(pageNumber <= 1 ? "disabled" : "")">
-            <a class="page-link" asp-action="Index" asp-route-pageNumber="@(pageNumber - 1)" asp-route-pageSize="@pageSize">Previous</a>
-        </li>
-        @for (var i = 1; i <= totalPages; i++)
-        {
-            <li class="page-item @(i == pageNumber ? "active" : "")">
-                <a class="page-link" asp-action="Index" asp-route-pageNumber="@i" asp-route-pageSize="@pageSize">@i</a>
-            </li>
-        }
-        <li class="page-item @(pageNumber >= totalPages ? "disabled" : "")">
-            <a class="page-link" asp-action="Index" asp-route-pageNumber="@(pageNumber + 1)" asp-route-pageSize="@pageSize">Next</a>
-        </li>
-    </ul>
-</nav>
+@await Html.PartialAsync("_Pager", new CoreMVC.Web.Models.PagerModel(pageNumber, totalPages, pageSize))
 <p class="text-muted">Showing page @pageNumber of @totalPages (@totalCount total orders)</p>

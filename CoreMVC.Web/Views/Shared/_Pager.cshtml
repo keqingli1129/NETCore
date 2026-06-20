@@ -1,0 +1,34 @@
+@model CoreMVC.Web.Models.PagerModel
+
+@{
+    // Show at most a small window of page numbers around the current page.
+    const int windowSize = 2;
+    var startPage = Math.Max(1, Model.PageNumber - windowSize);
+    var endPage = Math.Min(Model.TotalPages, Model.PageNumber + windowSize);
+}
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="pagination">
+        <ul class="pagination">
+            <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="1" asp-route-pageSize="@Model.PageSize" aria-label="First">&laquo;</a>
+            </li>
+            <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-pageSize="@Model.PageSize" aria-label="Previous">&lsaquo;</a>
+            </li>
+            @for (var i = startPage; i <= endPage; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pageNumber="@i" asp-route-pageSize="@Model.PageSize">@i</a>
+                </li>
+            }
+            <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-pageSize="@Model.PageSize" aria-label="Next">&rsaquo;</a>
+            </li>
+            <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageNumber="@Model.TotalPages" asp-route-pageSize="@Model.PageSize" aria-label="Last">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+}

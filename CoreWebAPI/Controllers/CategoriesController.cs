@@ -1,3 +1,5 @@
+using CoreMVC.Contracts.Categories;
+using CoreMVC.Contracts.Common;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -117,17 +119,4 @@ public class CategoriesController(ApplicationDbContext context) : ControllerBase
 
         return NoContent();
     }
-}
-
-public record CategoryDto
-{
-    public int CategoryId { get; init; }
-    public string? CategoryName { get; init; }
-    public string? Description { get; init; }
-}
-
-public record CreateCategoryDto
-{
-    public required string CategoryName { get; init; }
-    public string? Description { get; init; }
 }

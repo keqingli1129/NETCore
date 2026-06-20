@@ -1,3 +1,5 @@
+using CoreMVC.Contracts.Common;
+using CoreMVC.Contracts.Employees;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -132,41 +134,4 @@ public class EmployeesController(ApplicationDbContext context) : ControllerBase
 
         return NoContent();
     }
-}
-
-public record EmployeeDto
-{
-    public int EmployeeId { get; init; }
-    public string? LastName { get; init; }
-    public string? FirstName { get; init; }
-    public string? Title { get; init; }
-    public string? City { get; init; }
-    public string? Country { get; init; }
-    public DateTime? HireDate { get; init; }
-    public int? ReportsTo { get; init; }
-}
-
-public record CreateEmployeeDto
-{
-    public required string LastName { get; init; }
-    public required string FirstName { get; init; }
-    public string? Title { get; init; }
-    public DateTime? BirthDate { get; init; }
-    public DateTime? HireDate { get; init; }
-    public string? Address { get; init; }
-    public string? City { get; init; }
-    public string? Region { get; init; }
-    public string? PostalCode { get; init; }
-    public string? Country { get; init; }
-    public string? HomePhone { get; init; }
-    public int? ReportsTo { get; init; }
-}
-
-public record PagedResult<T>
-{
-    public IReadOnlyList<T> Items { get; init; } = [];
-    public int Page { get; init; }
-    public int PageSize { get; init; }
-    public int TotalCount { get; init; }
-    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 }

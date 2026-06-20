@@ -1,4 +1,4 @@
-@model CoreMVC.Domain.Entities.Order
+@model CoreMVC.Contracts.Orders.OrderDto
 
 @{
     ViewData["Title"] = $"Delete Order #{Model.OrderId}";
@@ -14,15 +14,10 @@
     <hr />
     <dl class="row">
         <dt class="col-sm-3">Customer</dt>
-        <dd class="col-sm-9">@Model.Customer?.CompanyName</dd>
+        <dd class="col-sm-9">@Model.CustomerName</dd>
 
         <dt class="col-sm-3">Employee</dt>
-        <dd class="col-sm-9">
-            @if (Model.Employee is not null)
-            {
-                @($"{Model.Employee.FirstName} {Model.Employee.LastName}")
-            }
-        </dd>
+        <dd class="col-sm-9">@Model.EmployeeName</dd>
 
         <dt class="col-sm-3">Order Date</dt>
         <dd class="col-sm-9">@Model.OrderDate?.ToString("yyyy-MM-dd")</dd>
@@ -34,7 +29,7 @@
         <dd class="col-sm-9">@Model.ShippedDate?.ToString("yyyy-MM-dd")</dd>
 
         <dt class="col-sm-3">Ship Via</dt>
-        <dd class="col-sm-9">@Model.ShipViaNavigation?.CompanyName</dd>
+        <dd class="col-sm-9">@Model.Shipper</dd>
 
         <dt class="col-sm-3">Freight</dt>
         <dd class="col-sm-9">@Model.Freight?.ToString("C")</dd>

@@ -28,6 +28,7 @@
     <ProjectReference Include="..\CoreMVC.Application\CoreMVC.Application.csproj" />
     <ProjectReference Include="..\CoreMVC.Domain\CoreMVC.Domain.csproj" />
     <ProjectReference Include="..\CoreMVC.Infrastructure\CoreMVC.Infrastructure.csproj" />
+    <ProjectReference Include="..\CoreMVC.Contracts\CoreMVC.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

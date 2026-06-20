@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CoreMVC.Domain\CoreMVC.Domain.csproj" />
+    <ProjectReference Include="..\CoreMVC.Contracts\CoreMVC.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

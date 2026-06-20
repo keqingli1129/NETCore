@@ -2,10 +2,12 @@
 
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Query;
 
-public class TestAsyncQueryProvider<TEntity> : IQueryProvider
+public class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
 {
     private readonly IQueryProvider _inner;
 
@@ -32,5 +34,18 @@ public class TestAsyncQueryProvider<TEntity> : IQueryProvider
     public TResult Execute<TResult>(Expression expression)
     {
         return _inner.Execute<TResult>(expression);
+    }
+
+    // Bridges EF Core async operators (CountAsync, FirstOrDefaultAsync, ...) to the
+    // synchronous inner provider by wrapping the result in a completed Task.
+    public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
+    {
+        var expectedResultType = typeof(TResult).GetGenericArguments()[0];
+        var executionResult = ((IQueryProvider)this).Execute(expression);
+
+        return (TResult)typeof(Task)
+            .GetMethod(nameof(Task.FromResult))!
+            .MakeGenericMethod(expectedResultType)
+            .Invoke(null, new[] { executionResult })!;
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using CoreMVC.Contracts.Orders;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -41,7 +42,7 @@ public class OrdersController : Controller
         response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync();
-        var orders = await JsonSerializer.DeserializeAsync<List<Order>>(stream, s_jsonOptions) ?? [];
+        var orders = await JsonSerializer.DeserializeAsync<List<OrderDto>>(stream, s_jsonOptions) ?? [];
 
         var totalCount = 0;
         if (response.Headers.TryGetValues("X-Total-Count", out var totalCountValues))
@@ -80,7 +81,7 @@ public class OrdersController : Controller
         response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync();
-        var order = await JsonSerializer.DeserializeAsync<Order>(stream, s_jsonOptions);
+        var order = await JsonSerializer.DeserializeAsync<OrderDto>(stream, s_jsonOptions);
 
         if (order is null)
         {
@@ -104,17 +105,12 @@ public class OrdersController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("CustomerId,EmployeeId,OrderDate,RequiredDate,ShipVia,Freight,ShipName,ShipAddress,ShipCity,ShipRegion,ShipPostalCode,ShipCountry")] Order order)
+    public async Task<IActionResult> Create(CreateOrderDto dto)
     {
-        ModelState.Remove(nameof(Order.Customer));
-        ModelState.Remove(nameof(Order.Employee));
-        ModelState.Remove(nameof(Order.ShipViaNavigation));
-        ModelState.Remove(nameof(Order.OrderDetails));
-
         if (ModelState.IsValid)
         {
             var client = _httpClientFactory.CreateClient("OrdersApi");
-            var json = JsonSerializer.Serialize(order, s_jsonOptions);
+            var json = JsonSerializer.Serialize(dto, s_jsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             using var response = await client.PostAsync("api/Orders", content);
             response.EnsureSuccessStatusCode();
@@ -122,8 +118,8 @@ public class OrdersController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        PopulateDropdowns(order);
-        return View(order);
+        PopulateDropdowns(dto.CustomerId, dto.EmployeeId, dto.ShipVia);
+        return View(dto);
     }
 
     /// <summary>
@@ -147,15 +143,18 @@ public class OrdersController : Controller
         response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync();
-        var order = await JsonSerializer.DeserializeAsync<Order>(stream, s_jsonOptions);
+        var order = await JsonSerializer.DeserializeAsync<OrderDto>(stream, s_jsonOptions);
 
         if (order is null)
         {
             return NotFound();
         }
 
-        PopulateDropdowns(order);
-        return View(order);
+        var dto = ToCreateDto(order);
+
+        ViewData["OrderId"] = order.OrderId;
+        PopulateDropdowns(dto.CustomerId, dto.EmployeeId, dto.ShipVia);
+        return View(dto);
     }
 
     /// <summary>
@@ -163,22 +162,12 @@ public class OrdersController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("OrderId,CustomerId,EmployeeId,OrderDate,RequiredDate,ShippedDate,ShipVia,Freight,ShipName,ShipAddress,ShipCity,ShipRegion,ShipPostalCode,ShipCountry")] Order order)
+    public async Task<IActionResult> Edit(int id, CreateOrderDto dto)
     {
-        if (id != order.OrderId)
-        {
-            return NotFound();
-        }
-
-        ModelState.Remove(nameof(Order.Customer));
-        ModelState.Remove(nameof(Order.Employee));
-        ModelState.Remove(nameof(Order.ShipViaNavigation));
-        ModelState.Remove(nameof(Order.OrderDetails));
-
         if (ModelState.IsValid)
         {
             var client = _httpClientFactory.CreateClient("OrdersApi");
-            var json = JsonSerializer.Serialize(order, s_jsonOptions);
+            var json = JsonSerializer.Serialize(dto, s_jsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             using var response = await client.PutAsync($"api/Orders/{id}", content);
 
@@ -191,8 +180,9 @@ public class OrdersController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        PopulateDropdowns(order);
-        return View(order);
+        ViewData["OrderId"] = id;
+        PopulateDropdowns(dto.CustomerId, dto.EmployeeId, dto.ShipVia);
+        return View(dto);
     }
 
     /// <summary>
@@ -216,7 +206,7 @@ public class OrdersController : Controller
         response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync();
-        var order = await JsonSerializer.DeserializeAsync<Order>(stream, s_jsonOptions);
+        var order = await JsonSerializer.DeserializeAsync<OrderDto>(stream, s_jsonOptions);
 
         if (order is null)
         {
@@ -245,24 +235,41 @@ public class OrdersController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private void PopulateDropdowns(Order? order = null)
+    private static CreateOrderDto ToCreateDto(OrderDto order) => new()
+    {
+        CustomerId = order.CustomerId ?? string.Empty,
+        EmployeeId = order.EmployeeId,
+        OrderDate = order.OrderDate,
+        RequiredDate = order.RequiredDate,
+        ShippedDate = order.ShippedDate,
+        ShipVia = order.ShipVia,
+        Freight = order.Freight,
+        ShipName = order.ShipName,
+        ShipAddress = order.ShipAddress,
+        ShipCity = order.ShipCity,
+        ShipRegion = order.ShipRegion,
+        ShipPostalCode = order.ShipPostalCode,
+        ShipCountry = order.ShipCountry
+    };
+
+    private void PopulateDropdowns(string? customerId = null, int? employeeId = null, int? shipVia = null)
     {
         ViewData["CustomerId"] = new SelectList(
             _context.Customers.OrderBy(c => c.CompanyName),
             nameof(Customer.CustomerId),
             nameof(Customer.CompanyName),
-            order?.CustomerId);
+            customerId);
 
         ViewData["EmployeeId"] = new SelectList(
             _context.Employees.OrderBy(e => e.LastName),
             nameof(Employee.EmployeeId),
             nameof(Employee.LastName),
-            order?.EmployeeId);
+            employeeId);
 
         ViewData["ShipVia"] = new SelectList(
             _context.Shippers.OrderBy(s => s.CompanyName),
             nameof(Shipper.ShipperId),
             nameof(Shipper.CompanyName),
-            order?.ShipVia);
+            shipVia);
     }
 }

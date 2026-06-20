@@ -31,5 +31,16 @@
         }
     </tbody>
 </table>
+
+@{
+    var pageNumber = (int)ViewData["PageNumber"]!;
+    var totalPages = (int)ViewData["TotalPages"]!;
+    var pageSize = (int)ViewData["PageSize"]!;
+    var totalCount = (int)ViewData["TotalCount"]!;
+}
+
+@await Html.PartialAsync("_Pager", new CoreMVC.Web.Models.PagerModel(pageNumber, totalPages, pageSize))
+<p class="text-muted">Showing page @pageNumber of @totalPages (@totalCount total roles)</p>
+
 <p>Access Token</p>
 <p>@ViewBag.AccessToken</p>

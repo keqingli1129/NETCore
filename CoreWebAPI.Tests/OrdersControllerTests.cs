@@ -1,3 +1,4 @@
+using CoreMVC.Contracts.Orders;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
 using CoreWebAPI.Controllers;
@@ -37,6 +38,9 @@ public class OrdersControllerTests : IDisposable
 
     private Order CreateOrder(int orderId, string customerId = "ALFKI") =>
         new() { OrderId = orderId, CustomerId = customerId, ShipName = $"Ship-{orderId}" };
+
+    private static CreateOrderDto CreateOrderDto(string customerId = "ALFKI", string? shipName = null) =>
+        new() { CustomerId = customerId, ShipName = shipName ?? "Ship-new" };
 
     private async Task SeedOrdersAsync(int count)
     {
@@ -121,22 +125,12 @@ public class OrdersControllerTests : IDisposable
     [Fact]
     public async Task PostOrder_CreatesAndReturnsCreatedAtAction()
     {
-        var order = CreateOrder(0);
+        var dto = CreateOrderDto();
 
-        var result = await _controller.PostOrder(order);
+        var result = await _controller.PostOrder(dto);
 
         result.Result.Should().BeOfType<CreatedAtActionResult>();
         _context.Orders.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task PutOrder_WhenIdMismatch_ReturnsBadRequest()
-    {
-        var order = CreateOrder(1);
-
-        var result = await _controller.PutOrder(2, order);
-
-        result.Should().BeOfType<BadRequestResult>();
     }
 
     [Fact]
@@ -145,12 +139,8 @@ public class OrdersControllerTests : IDisposable
         var order = CreateOrder(1);
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
-        _context.Entry(order).State = EntityState.Detached;
 
-        var updated = CreateOrder(1);
-        updated.ShipName = "Updated";
-
-        var result = await _controller.PutOrder(1, updated);
+        var result = await _controller.PutOrder(1, CreateOrderDto(shipName: "Updated"));
 
         result.Should().BeOfType<NoContentResult>();
         var saved = await _context.Orders.FindAsync(1);
@@ -160,9 +150,7 @@ public class OrdersControllerTests : IDisposable
     [Fact]
     public async Task PutOrder_WhenNotFound_ReturnsNotFound()
     {
-        var order = CreateOrder(999);
-
-        var result = await _controller.PutOrder(999, order);
+        var result = await _controller.PutOrder(999, CreateOrderDto());
 
         result.Should().BeOfType<NotFoundResult>();
     }

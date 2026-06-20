@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using CoreMVC.Contracts.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -64,16 +65,4 @@ public class AuthController(UserManager<IdentityUser> userManager, IConfiguratio
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-}
-
-public record RegisterDto
-{
-    public required string Email { get; init; }
-    public required string Password { get; init; }
-}
-
-public record LoginDto
-{
-    public required string Email { get; init; }
-    public required string Password { get; init; }
 }

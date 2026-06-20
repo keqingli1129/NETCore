@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
+using CoreMVC.Contracts.Common;
+using CoreMVC.Contracts.Employees;
 using CoreWebAPI.Controllers;
 using FakeItEasy;
 using FluentAssertions;
