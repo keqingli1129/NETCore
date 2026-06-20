@@ -31,6 +31,12 @@ namespace CoreWebAPI.Controllers
             var totalCount = await _context.Orders.CountAsync();
 
             var orders = await _context.Orders
+                .AsNoTracking()
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.ShipViaNavigation)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Product)
                 .OrderBy(o => o.OrderId)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -48,6 +54,7 @@ namespace CoreWebAPI.Controllers
         public async Task<ActionResult<Order>> GetOrder(int id)
         {
             var order = await _context.Orders
+                .AsNoTracking()
                 .Include(o => o.Customer)
                 .Include(o => o.Employee)
                 .Include(o => o.ShipViaNavigation)
