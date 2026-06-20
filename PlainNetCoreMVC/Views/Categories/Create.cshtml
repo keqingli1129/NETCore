@@ -11,7 +11,7 @@
                 <h4 class="mb-0">Create New Category</h4>
             </div>
             <div class="card-body">
-                <form asp-action="Create">
+                <form asp-action="Create" enctype="multipart/form-data">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                     <div class="mb-3">
@@ -24,6 +24,11 @@
                         <label asp-for="Description" class="form-label"></label>
                         <textarea asp-for="Description" class="form-control" rows="4"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Picture</label>
+                        <input type="file" name="picture" class="form-control" accept="image/*" />
                     </div>
 
                     <hr />

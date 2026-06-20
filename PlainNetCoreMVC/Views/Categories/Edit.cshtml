@@ -11,7 +11,7 @@
                 <h4 class="mb-0">Edit Category</h4>
             </div>
             <div class="card-body">
-                <form asp-action="Edit">
+                <form asp-action="Edit" enctype="multipart/form-data">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                     <input type="hidden" asp-for="CategoryId" />
 
@@ -25,6 +25,18 @@
                         <label asp-for="Description" class="form-label"></label>
                         <textarea asp-for="Description" class="form-control" rows="4"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Picture</label>
+                        @if (Model.Picture != null && Model.Picture.Length > 0)
+                        {
+                            <div class="mb-2">
+                                <img src="data:image/png;base64,@Convert.ToBase64String(Model.Picture)" alt="Current Picture" class="img-thumbnail" style="max-height: 150px;" />
+                            </div>
+                        }
+                        <input type="file" name="picture" class="form-control" accept="image/*" />
+                        <small class="text-muted">Leave empty to keep the current picture.</small>
                     </div>
 
                     <hr />
