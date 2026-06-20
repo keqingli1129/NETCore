@@ -1,5 +1,6 @@
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PlainNetCoreMVC.Models;
 
@@ -22,35 +23,38 @@ public class CustomersController : Controller
     }
 
     // GET: CUSTOMERS/Details/5
-    public async Task<IActionResult> Details(string? customerid)
+    public async Task<IActionResult> Details(string? id)
     {
-        if (customerid == null)
+        if (id == null)
         {
             return NotFound();
         }
 
         var customer = await _context.Customers
-            .FirstOrDefaultAsync(m => m.CustomerId == customerid);
+            .Include(c => c.CustomerTypes)
+            .FirstOrDefaultAsync(m => m.CustomerId == id);
         if (customer == null)
         {
             return NotFound();
         }
 
+        await PopulateDropdownsAsync(customer.Region);
         return View(customer);
     }
 
     // GET: CUSTOMERS/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        await PopulateDropdownsAsync();
         return View();
     }
 
     // POST: CUSTOMERS/Create
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("CustomerId,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax,Orders,CustomerTypes")] Customer customer)
+    public async Task<IActionResult> Create(
+        [Bind("CustomerId,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customer customer,
+        string selectedCustomerDemographicId)
     {
         if (ModelState.IsValid)
         {
@@ -58,33 +62,38 @@ public class CustomersController : Controller
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+        await PopulateDropdownsAsync(customer.Region);
         return View(customer);
     }
 
     // GET: CUSTOMERS/Edit/5
-    public async Task<IActionResult> Edit(string? customerid)
+    public async Task<IActionResult> Edit(string? id)
     {
-        if (customerid == null)
+        if (id == null)
         {
             return NotFound();
         }
 
-        var customer = await _context.Customers.FindAsync(customerid);
+        var customer = await _context.Customers
+            .Include(c => c.CustomerTypes)
+            .FirstOrDefaultAsync(c => c.CustomerId == id);
         if (customer == null)
         {
             return NotFound();
         }
+        await PopulateDropdownsAsync(customer.Region);
         return View(customer);
     }
 
     // POST: CUSTOMERS/Edit/5
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(string? customerid, [Bind("CustomerId,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax,Orders,CustomerTypes")] Customer customer)
+    public async Task<IActionResult> Edit(
+        string? id,
+        [Bind("CustomerId,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customer customer,
+        string selectedCustomerDemographicId)
     {
-        if (customerid != customer.CustomerId)
+        if (id != customer.CustomerId)
         {
             return NotFound();
         }
@@ -93,7 +102,19 @@ public class CustomersController : Controller
         {
             try
             {
-                _context.Update(customer);
+                var existingCustomer = await _context.Customers
+                    .Include(c => c.CustomerTypes)
+                    .FirstOrDefaultAsync(c => c.CustomerId == id);
+
+                if (existingCustomer == null)
+                {
+                    return NotFound();
+                }
+
+                _context.Entry(existingCustomer).CurrentValues.SetValues(customer);
+                existingCustomer.CustomerTypes.Clear();
+                await AttachSelectedCustomerDemographicAsync(existingCustomer, selectedCustomerDemographicId);
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -109,19 +130,20 @@ public class CustomersController : Controller
             }
             return RedirectToAction(nameof(Index));
         }
+        await PopulateDropdownsAsync(customer.Region);
         return View(customer);
     }
 
     // GET: CUSTOMERS/Delete/5
-    public async Task<IActionResult> Delete(string? customerid)
+    public async Task<IActionResult> Delete(string? id)
     {
-        if (customerid == null)
+        if (id == null)
         {
             return NotFound();
         }
 
         var customer = await _context.Customers
-            .FirstOrDefaultAsync(m => m.CustomerId == customerid);
+            .FirstOrDefaultAsync(m => m.CustomerId == id);
         if (customer == null)
         {
             return NotFound();
@@ -133,9 +155,9 @@ public class CustomersController : Controller
     // POST: CUSTOMERS/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(string? customerid)
+    public async Task<IActionResult> DeleteConfirmed(string? id)
     {
-        var customer = await _context.Customers.FindAsync(customerid);
+        var customer = await _context.Customers.FindAsync(id);
         if (customer != null)
         {
             _context.Customers.Remove(customer);
@@ -145,8 +167,30 @@ public class CustomersController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private bool CustomerExists(string? customerid)
+    private bool CustomerExists(string? id)
     {
-        return _context.Customers.Any(e => e.CustomerId == customerid);
+        return _context.Customers.Any(e => e.CustomerId == id);
+    }
+
+    private async Task PopulateDropdownsAsync(string selectedRegion = null)
+    {
+        var regions = await _context.Regions
+            .OrderBy(r => r.RegionDescription)
+            .Select(r => r.RegionDescription.Trim())
+            .ToListAsync();
+        ViewBag.RegionList = new SelectList(regions, selectedRegion);
+       
+    }
+
+    private async Task AttachSelectedCustomerDemographicAsync(Customer customer, string selectedCustomerDemographicId)
+    {
+        if (!string.IsNullOrWhiteSpace(selectedCustomerDemographicId))
+        {
+            var demographic = await _context.CustomerDemographics.FindAsync(selectedCustomerDemographicId);
+            if (demographic != null)
+            {
+                customer.CustomerTypes.Add(demographic);
+            }
+        }
     }
 }

@@ -49,7 +49,9 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label asp-for="Region" class="form-label"></label>
-                            <input asp-for="Region" class="form-control" />
+                            <select asp-for="Region" asp-items="@ViewBag.RegionList" class="form-select">
+                                <option value="">-- Select Region --</option>
+                            </select>
                             <span asp-validation-for="Region" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -76,6 +78,8 @@
                             <span asp-validation-for="Fax" class="text-danger"></span>
                         </div>
                     </div>
+
+                   
 
                     <hr />
                     <div class="d-flex justify-content-between">
