@@ -54,7 +54,7 @@ public class CustomersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
         [Bind("CustomerId,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customer customer,
-        string selectedCustomerDemographicId)
+        string? selectedCustomerDemographicId)
     {
         if (ModelState.IsValid)
         {
@@ -91,7 +91,7 @@ public class CustomersController : Controller
     public async Task<IActionResult> Edit(
         string? id,
         [Bind("CustomerId,CompanyName,ContactName,ContactTitle,Address,City,Region,PostalCode,Country,Phone,Fax")] Customer customer,
-        string selectedCustomerDemographicId)
+        string? selectedCustomerDemographicId)
     {
         if (id != customer.CustomerId)
         {
