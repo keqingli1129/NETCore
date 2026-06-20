@@ -2,6 +2,7 @@ using CoreMVC.Contracts.Categories;
 using CoreMVC.Contracts.Common;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
+using CoreWebAPI.Mapping;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,17 +25,11 @@ public class CategoriesController(ApplicationDbContext context) : ControllerBase
         if (pageSize > 100) pageSize = 100;
 
         var totalCount = await context.Categories.CountAsync(cancellationToken);
-        var categories = await context.Categories
+        var query = context.Categories
             .OrderBy(c => c.CategoryId)
             .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(c => new CategoryDto
-            {
-                CategoryId = c.CategoryId,
-                CategoryName = c.CategoryName,
-                Description = c.Description
-            })
-            .ToListAsync(cancellationToken);
+            .Take(pageSize);
+        var categories = await CategoryMapper.ProjectToDto(query).ToListAsync(cancellationToken);
 
         return Ok(new PagedResult<CategoryDto>
         {
@@ -55,12 +50,7 @@ public class CategoriesController(ApplicationDbContext context) : ControllerBase
         if (category is null)
             return NotFound();
 
-        return Ok(new CategoryDto
-        {
-            CategoryId = category.CategoryId,
-            CategoryName = category.CategoryName,
-            Description = category.Description
-        });
+        return Ok(CategoryMapper.ToDto(category));
     }
 
     /// <summary>
@@ -69,21 +59,12 @@ public class CategoriesController(ApplicationDbContext context) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateCategory(CreateCategoryDto dto, CancellationToken cancellationToken = default)
     {
-        var category = new Category
-        {
-            CategoryName = dto.CategoryName,
-            Description = dto.Description
-        };
+        var category = CategoryMapper.ToEntity(dto);
 
         context.Categories.Add(category);
         await context.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetCategory), new { id = category.CategoryId }, new CategoryDto
-        {
-            CategoryId = category.CategoryId,
-            CategoryName = category.CategoryName,
-            Description = category.Description
-        });
+        return CreatedAtAction(nameof(GetCategory), new { id = category.CategoryId }, CategoryMapper.ToDto(category));
     }
 
     /// <summary>
@@ -96,8 +77,7 @@ public class CategoriesController(ApplicationDbContext context) : ControllerBase
         if (category is null)
             return NotFound();
 
-        category.CategoryName = dto.CategoryName;
-        category.Description = dto.Description;
+        CategoryMapper.Update(dto, category);
 
         await context.SaveChangesAsync(cancellationToken);
 

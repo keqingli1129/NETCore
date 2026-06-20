@@ -2,6 +2,7 @@ using CoreMVC.Contracts.Common;
 using CoreMVC.Contracts.Employees;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
+using CoreWebAPI.Mapping;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,22 +25,11 @@ public class EmployeesController(ApplicationDbContext context) : ControllerBase
         if (pageSize > 100) pageSize = 100;
 
         var totalCount = await context.Employees.CountAsync(cancellationToken);
-        var employees = await context.Employees
+        var query = context.Employees
             .OrderBy(e => e.EmployeeId)
             .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(e => new EmployeeDto
-            {
-                EmployeeId = e.EmployeeId,
-                LastName = e.LastName,
-                FirstName = e.FirstName,
-                Title = e.Title,
-                City = e.City,
-                Country = e.Country,
-                HireDate = e.HireDate,
-                ReportsTo = e.ReportsTo
-            })
-            .ToListAsync(cancellationToken);
+            .Take(pageSize);
+        var employees = await EmployeeMapper.ProjectToDto(query).ToListAsync(cancellationToken);
 
         return Ok(new PagedResult<EmployeeDto>
         {
@@ -60,7 +50,7 @@ public class EmployeesController(ApplicationDbContext context) : ControllerBase
         if (employee is null)
             return NotFound();
 
-        return Ok(employee);
+        return Ok(EmployeeMapper.ToDto(employee));
     }
 
     /// <summary>
@@ -69,26 +59,12 @@ public class EmployeesController(ApplicationDbContext context) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateEmployee(CreateEmployeeDto dto, CancellationToken cancellationToken = default)
     {
-        var employee = new Employee
-        {
-            LastName = dto.LastName,
-            FirstName = dto.FirstName,
-            Title = dto.Title,
-            BirthDate = dto.BirthDate,
-            HireDate = dto.HireDate,
-            Address = dto.Address,
-            City = dto.City,
-            Region = dto.Region,
-            PostalCode = dto.PostalCode,
-            Country = dto.Country,
-            HomePhone = dto.HomePhone,
-            ReportsTo = dto.ReportsTo
-        };
+        var employee = EmployeeMapper.ToEntity(dto);
 
         context.Employees.Add(employee);
         await context.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeId }, employee);
+        return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeId }, EmployeeMapper.ToDto(employee));
     }
 
     /// <summary>
@@ -101,18 +77,7 @@ public class EmployeesController(ApplicationDbContext context) : ControllerBase
         if (employee is null)
             return NotFound();
 
-        employee.LastName = dto.LastName;
-        employee.FirstName = dto.FirstName;
-        employee.Title = dto.Title;
-        employee.BirthDate = dto.BirthDate;
-        employee.HireDate = dto.HireDate;
-        employee.Address = dto.Address;
-        employee.City = dto.City;
-        employee.Region = dto.Region;
-        employee.PostalCode = dto.PostalCode;
-        employee.Country = dto.Country;
-        employee.HomePhone = dto.HomePhone;
-        employee.ReportsTo = dto.ReportsTo;
+        EmployeeMapper.Update(dto, employee);
 
         await context.SaveChangesAsync(cancellationToken);
 

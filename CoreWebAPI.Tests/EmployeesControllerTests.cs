@@ -99,7 +99,7 @@ public class EmployeesControllerTests : IDisposable
         var result = await _controller.GetEmployee(1);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
-        var employee = ok.Value.Should().BeOfType<Employee>().Subject;
+        var employee = ok.Value.Should().BeOfType<EmployeeDto>().Subject;
         employee.EmployeeId.Should().Be(1);
     }
 

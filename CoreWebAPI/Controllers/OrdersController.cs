@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CoreMVC.Contracts.Orders;
 using CoreMVC.Domain.Entities;
 using CoreMVC.Infrastructure.Data;
+using CoreWebAPI.Mapping;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -108,7 +109,7 @@ namespace CoreWebAPI.Controllers
                 return NotFound();
             }
 
-            MapInto(order, dto);
+            OrderMapper.Update(dto, order);
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -119,7 +120,7 @@ namespace CoreWebAPI.Controllers
         public async Task<ActionResult<OrderDto>> PostOrder(CreateOrderDto dto)
         {
             var order = new Order();
-            MapInto(order, dto);
+            OrderMapper.Update(dto, order);
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
@@ -141,23 +142,6 @@ namespace CoreWebAPI.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private static void MapInto(Order order, CreateOrderDto dto)
-        {
-            order.CustomerId = dto.CustomerId;
-            order.EmployeeId = dto.EmployeeId;
-            order.OrderDate = dto.OrderDate;
-            order.RequiredDate = dto.RequiredDate;
-            order.ShippedDate = dto.ShippedDate;
-            order.ShipVia = dto.ShipVia;
-            order.Freight = dto.Freight;
-            order.ShipName = dto.ShipName;
-            order.ShipAddress = dto.ShipAddress;
-            order.ShipCity = dto.ShipCity;
-            order.ShipRegion = dto.ShipRegion;
-            order.ShipPostalCode = dto.ShipPostalCode;
-            order.ShipCountry = dto.ShipCountry;
         }
     }
 }
