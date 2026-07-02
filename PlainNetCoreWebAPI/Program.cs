@@ -1,4 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+using PlainNetCoreWebAPI.Models;
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("MVCNetContext") ?? throw new InvalidOperationException("Connection string 'MVCNetContext' not found.");
+
+builder.Services.AddDbContext<MVCNetContext>(options => options.UseSqlServer(connectionString));
 
 // Add services to the container.
 
