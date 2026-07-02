@@ -32,6 +32,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlainNetCoreMVC", "PlainNet
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreMVC.Contracts", "CoreMVC.Contracts\CoreMVC.Contracts.csproj", "{A90135D8-8545-43D2-A7D8-40536E3E2CF2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlainNetCoreWebAPI", "PlainNetCoreWebAPI\PlainNetCoreWebAPI.csproj", "{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -186,6 +188,18 @@ Global
 		{A90135D8-8545-43D2-A7D8-40536E3E2CF2}.Release|x64.Build.0 = Release|Any CPU
 		{A90135D8-8545-43D2-A7D8-40536E3E2CF2}.Release|x86.ActiveCfg = Release|Any CPU
 		{A90135D8-8545-43D2-A7D8-40536E3E2CF2}.Release|x86.Build.0 = Release|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Debug|x64.Build.0 = Debug|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Debug|x86.Build.0 = Debug|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Release|x64.ActiveCfg = Release|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Release|x64.Build.0 = Release|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Release|x86.ActiveCfg = Release|Any CPU
+		{E9DE5FD4-3D0B-4A80-9EDD-374C385FF571}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
