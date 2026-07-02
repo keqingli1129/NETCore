@@ -1,6 +1,42 @@
 @PlainNetCoreWebAPI_HostAddress = http://localhost:5179
 
+### Get weather forecast
 GET {{PlainNetCoreWebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+### Get all categories (paged)
+GET {{PlainNetCoreWebAPI_HostAddress}}/api/categories?page=1&pageSize=10
+Accept: application/json
+
+### Get all categories (with search)
+GET {{PlainNetCoreWebAPI_HostAddress}}/api/categories?page=1&pageSize=10&search=bev
+Accept: application/json
+
+### Get category by id
+GET {{PlainNetCoreWebAPI_HostAddress}}/api/categories/1
+Accept: application/json
+
+### Create a new category
+POST {{PlainNetCoreWebAPI_HostAddress}}/api/categories
+Content-Type: application/json
+
+{
+  "categoryName": "New Category",
+  "description": "A new category description"
+}
+
+### Update an existing category
+PUT {{PlainNetCoreWebAPI_HostAddress}}/api/categories/1
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "categoryName": "Updated Category",
+  "description": "Updated description"
+}
+
+### Delete a category
+DELETE {{PlainNetCoreWebAPI_HostAddress}}/api/categories/1
 Accept: application/json
 
 ###
