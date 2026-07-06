@@ -6,10 +6,12 @@ using PlainNetCoreMVC.Models;
 public class CategoriesController : Controller
 {
     private readonly MVCNetContext _context;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public CategoriesController(MVCNetContext context)
+    public CategoriesController(MVCNetContext context, IHttpClientFactory httpClientFactory)
     {
         _context = context;
+        _httpClientFactory = httpClientFactory;
     }
 
     private const int PageSize = 5;
@@ -19,6 +21,38 @@ public class CategoriesController : Controller
     {
         var categories = _context.Categories.OrderBy(c => c.CategoryName);
         return View(await PaginatedList<Category>.CreateAsync(categories, pageNumber ?? 1, PageSize));
+    }
+
+    // GET: Categories/FromApi — fetches categories from PlainNetCoreWebAPI instead of the local DbContext
+    public async Task<IActionResult> FromApi(int? pageNumber)
+    {
+        var client = _httpClientFactory.CreateClient("PlainNetCoreWebAPI");
+
+        try
+        {
+            var response = await client.GetFromJsonAsync<CategoriesApiResponse>(
+                $"api/Categories?page={pageNumber ?? 1}&pageSize={PageSize}");
+            if (response == null)
+            {
+                return View(new PaginatedList<Category>([], 0, 1, PageSize));
+            }
+            return View(new PaginatedList<Category>(
+                response.Items, response.TotalCount, response.Page, response.PageSize));
+        }
+        catch (HttpRequestException)
+        {
+            ViewBag.ErrorMessage = $"Could not reach PlainNetCoreWebAPI at {client.BaseAddress}. Make sure the API is running.";
+            return View(new PaginatedList<Category>([], 0, 1, PageSize));
+        }
+    }
+
+    // Shape of the PagedResult<T> JSON returned by PlainNetCoreWebAPI's CategoriesController
+    private sealed class CategoriesApiResponse
+    {
+        public List<Category> Items { get; set; } = [];
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
     }
 
     // GET: Categories/Details/5

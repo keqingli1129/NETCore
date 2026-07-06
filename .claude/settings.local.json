@@ -5,7 +5,11 @@
       "Bash(dotnet sln *)",
       "Bash(dotnet add *)",
       "Bash(dotnet build *)",
-      "Bash(dotnet test *)"
+      "Bash(dotnet test *)",
+      "Bash(dotnet run *)",
+      "Bash(curl -s \"http://localhost:5072/\")",
+      "Bash(curl -s \"http://localhost:5072/Categories/FromApi\")",
+      "Bash(curl -s \"http://localhost:5072/Categories/FromApi?pageNumber=2\")"
     ]
   }
 }

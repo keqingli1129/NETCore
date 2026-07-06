@@ -8,6 +8,12 @@ builder.Services.AddDbContext<MVCNetContext>(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient("PlainNetCoreWebAPI", client =>
+{
+    var baseUrl = builder.Configuration["PlainNetCoreWebAPI:BaseUrl"]
+        ?? throw new InvalidOperationException("Configuration value 'PlainNetCoreWebAPI:BaseUrl' not found.");
+    client.BaseAddress = new Uri(baseUrl);
+});
 
 var app = builder.Build();
 
