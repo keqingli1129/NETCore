@@ -8,6 +8,7 @@ builder.Services.AddDbContext<MVCNetContext>(options => options.UseSqlServer(con
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

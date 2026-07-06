@@ -9,7 +9,15 @@
       "Bash(dotnet run *)",
       "Bash(curl -s \"http://localhost:5072/\")",
       "Bash(curl -s \"http://localhost:5072/Categories/FromApi\")",
-      "Bash(curl -s \"http://localhost:5072/Categories/FromApi?pageNumber=2\")"
+      "Bash(curl -s \"http://localhost:5072/Categories/FromApi?pageNumber=2\")",
+      "Bash(curl -sk \"https://localhost:7152/api/Categories?page=1&pageSize=2\")",
+      "Bash(curl -sk \"https://localhost:7152/api/Categories/1\")",
+      "Bash(curl -sk \"https://localhost:7152/openapi/v1.json\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('components',{}\\).get\\('schemas',{}\\).keys\\(\\)\\)\\); print\\(json.dumps\\(d['components']['schemas'].get\\('CategoryDto'\\), indent=1\\)\\)\")",
+      "Bash(mkdir -p PlainNetCoreMVC/OpenAPIs)",
+      "Bash(curl -sk \"https://localhost:7152/openapi/v1.json\" -o PlainNetCoreMVC/OpenAPIs/plainnetcorewebapi.v1.json)",
+      "Bash(python -c \"import json; d=json.load\\(open\\('PlainNetCoreMVC/OpenAPIs/plainnetcorewebapi.v1.json'\\)\\); print\\(d['openapi'], list\\(d['paths'].keys\\(\\)\\)\\)\")",
+      "Bash(dotnet nswag *)"
     ]
   }
 }

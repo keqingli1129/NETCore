@@ -1,5 +1,8 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PlainNetCoreWebAPI.Dtos;
 using PlainNetCoreWebAPI.Models;
 
 [Route("api/[controller]")]
@@ -7,14 +10,17 @@ using PlainNetCoreWebAPI.Models;
 public class CategoriesController : ControllerBase
 {
     private readonly MVCNetContext _context;
-    public CategoriesController(MVCNetContext context)
+    private readonly IMapper _mapper;
+
+    public CategoriesController(MVCNetContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
-    // GET: api/Category?page=1&pageSize=10&search=bev
+    // GET: api/Categories?page=1&pageSize=10&search=bev
     [HttpGet]
-    public async Task<ActionResult<PagedResult<Category>>> GetCategory(
+    public async Task<ActionResult<PagedResult<CategoryDto>>> GetCategory(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? search = null)
@@ -39,9 +45,10 @@ public class CategoriesController : ControllerBase
             .OrderBy(c => c.CategoryId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .ProjectTo<CategoryDto>(_mapper.ConfigurationProvider)
             .ToListAsync();
 
-        return new PagedResult<Category>
+        return new PagedResult<CategoryDto>
         {
             Items = items,
             Page = page,
@@ -50,9 +57,9 @@ public class CategoriesController : ControllerBase
         };
     }
 
-    // GET: api/Category/5
+    // GET: api/Categories/5
     [HttpGet("{categoryid}")]
-    public async Task<ActionResult<Category>> GetCategory(int categoryid)
+    public async Task<ActionResult<CategoryDto>> GetCategory(int categoryid)
     {
         var category = await _context.Categories.FindAsync(categoryid);
 
@@ -61,52 +68,43 @@ public class CategoriesController : ControllerBase
             return NotFound();
         }
 
-        return category;
+        return _mapper.Map<CategoryDto>(category);
     }
 
-    // PUT: api/Category/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    // PUT: api/Categories/5
     [HttpPut("{categoryid}")]
-    public async Task<IActionResult> PutCategory(int? categoryid, Category category)
+    public async Task<IActionResult> PutCategory(int categoryid, CategoryDto categoryDto)
     {
-        if (categoryid != category.CategoryId)
+        if (categoryid != categoryDto.CategoryId)
         {
             return BadRequest();
         }
 
-        _context.Entry(category).State = EntityState.Modified;
+        var category = await _context.Categories.FindAsync(categoryid);
+        if (category == null)
+        {
+            return NotFound();
+        }
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!CategoryExists(categoryid))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
-        }
+        _mapper.Map(categoryDto, category);
+        await _context.SaveChangesAsync();
 
         return NoContent();
     }
 
-    // POST: api/Category
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    // POST: api/Categories
     [HttpPost]
-    public async Task<ActionResult<Category>> PostCategory(Category category)
+    public async Task<ActionResult<CategoryDto>> PostCategory(CategoryDto categoryDto)
     {
+        var category = _mapper.Map<Category>(categoryDto);
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetCategory", new { categoryid = category.CategoryId }, category);
+        var created = _mapper.Map<CategoryDto>(category);
+        return CreatedAtAction("GetCategory", new { categoryid = created.CategoryId }, created);
     }
 
-    // DELETE: api/Category/5
+    // DELETE: api/Categories/5
     [HttpDelete("{categoryid}")]
     public async Task<IActionResult> DeleteCategory(int? categoryid)
     {
@@ -120,10 +118,5 @@ public class CategoriesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
-    }
-
-    private bool CategoryExists(int? categoryid)
-    {
-        return _context.Categories.Any(e => e.CategoryId == categoryid);
     }
 }

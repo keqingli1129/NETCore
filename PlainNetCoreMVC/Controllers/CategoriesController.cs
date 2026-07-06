@@ -1,17 +1,18 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PlainNetCoreMVC.ApiClients;
 using PlainNetCoreMVC.Models;
 
 public class CategoriesController : Controller
 {
     private readonly MVCNetContext _context;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IPlainNetCoreWebApiClient _apiClient;
 
-    public CategoriesController(MVCNetContext context, IHttpClientFactory httpClientFactory)
+    public CategoriesController(MVCNetContext context, IPlainNetCoreWebApiClient apiClient)
     {
         _context = context;
-        _httpClientFactory = httpClientFactory;
+        _apiClient = apiClient;
     }
 
     private const int PageSize = 5;
@@ -23,36 +24,20 @@ public class CategoriesController : Controller
         return View(await PaginatedList<Category>.CreateAsync(categories, pageNumber ?? 1, PageSize));
     }
 
-    // GET: Categories/FromApi — fetches categories from PlainNetCoreWebAPI instead of the local DbContext
+    // GET: Categories/FromApi — fetches categories from PlainNetCoreWebAPI via the NSwag-generated client
     public async Task<IActionResult> FromApi(int? pageNumber)
     {
-        var client = _httpClientFactory.CreateClient("PlainNetCoreWebAPI");
-
         try
         {
-            var response = await client.GetFromJsonAsync<CategoriesApiResponse>(
-                $"api/Categories?page={pageNumber ?? 1}&pageSize={PageSize}");
-            if (response == null)
-            {
-                return View(new PaginatedList<Category>([], 0, 1, PageSize));
-            }
-            return View(new PaginatedList<Category>(
-                response.Items, response.TotalCount, response.Page, response.PageSize));
+            var result = await _apiClient.CategoriesGETAsync(pageNumber ?? 1, PageSize);
+            return View(new PaginatedList<CategoryDto>(
+                result.Items.ToList(), result.TotalCount, result.Page, result.PageSize));
         }
-        catch (HttpRequestException)
+        catch (Exception ex) when (ex is HttpRequestException or ApiException)
         {
-            ViewBag.ErrorMessage = $"Could not reach PlainNetCoreWebAPI at {client.BaseAddress}. Make sure the API is running.";
-            return View(new PaginatedList<Category>([], 0, 1, PageSize));
+            ViewBag.ErrorMessage = "Could not reach PlainNetCoreWebAPI. Make sure the API is running.";
+            return View(new PaginatedList<CategoryDto>([], 0, 1, PageSize));
         }
-    }
-
-    // Shape of the PagedResult<T> JSON returned by PlainNetCoreWebAPI's CategoriesController
-    private sealed class CategoriesApiResponse
-    {
-        public List<Category> Items { get; set; } = [];
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int TotalCount { get; set; }
     }
 
     // GET: Categories/Details/5

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PlainNetCoreMVC.ApiClients;
 using PlainNetCoreMVC.Models;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("MVCNetContext") ?? throw new InvalidOperationException("Connection string 'MVCNetContext' not found.");
@@ -8,7 +9,7 @@ builder.Services.AddDbContext<MVCNetContext>(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient("PlainNetCoreWebAPI", client =>
+builder.Services.AddHttpClient<IPlainNetCoreWebApiClient, PlainNetCoreWebApiClient>(client =>
 {
     var baseUrl = builder.Configuration["PlainNetCoreWebAPI:BaseUrl"]
         ?? throw new InvalidOperationException("Configuration value 'PlainNetCoreWebAPI:BaseUrl' not found.");
