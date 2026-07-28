@@ -1,27 +1,33 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Models;
+using NZWalks.API.Models.DTOs;
 
 [Route("api/[controller]")]
 [ApiController]
 public class RegionsController : ControllerBase
 {
     private readonly MVCNetNZWalksContext _context;
-    public RegionsController(MVCNetNZWalksContext context)
+    private readonly IMapper _mapper;
+
+    public RegionsController(MVCNetNZWalksContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // GET: api/Region
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Region>>> GetRegion()
+    public async Task<ActionResult<IEnumerable<RegionDto>>> GetRegion()
     {
-        return await _context.Regions.ToListAsync();
+        var regions = await _context.Regions.ToListAsync();
+        return Ok(_mapper.Map<List<RegionDto>>(regions));
     }
 
     // GET: api/Region/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Region>> GetRegion(System.Guid id)
+    public async Task<ActionResult<RegionDto>> GetRegion(Guid id)
     {
         var region = await _context.Regions.FindAsync(id);
 
@@ -30,20 +36,21 @@ public class RegionsController : ControllerBase
             return NotFound();
         }
 
-        return region;
+        return Ok(_mapper.Map<RegionDto>(region));
     }
 
     // PUT: api/Region/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutRegion(System.Guid? id, Region region)
+    public async Task<IActionResult> PutRegion(Guid id, UpdateRegionRequestDto updateRegionRequestDto)
     {
-        if (id != region.Id)
+        var region = await _context.Regions.FindAsync(id);
+
+        if (region == null)
         {
-            return BadRequest();
+            return NotFound();
         }
 
-        _context.Entry(region).State = EntityState.Modified;
+        _mapper.Map(updateRegionRequestDto, region);
 
         try
         {
@@ -61,23 +68,25 @@ public class RegionsController : ControllerBase
             }
         }
 
-        return NoContent();
+        return Ok(_mapper.Map<RegionDto>(region));
     }
 
     // POST: api/Region
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<Region>> PostRegion(Region region)
+    public async Task<ActionResult<RegionDto>> PostRegion(AddRegionRequestDto addRegionRequestDto)
     {
+        var region = _mapper.Map<Region>(addRegionRequestDto);
+
         _context.Regions.Add(region);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetRegion", new { id = region.Id }, region);
+        var regionDto = _mapper.Map<RegionDto>(region);
+        return CreatedAtAction(nameof(GetRegion), new { id = regionDto.Id }, regionDto);
     }
 
     // DELETE: api/Region/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteRegion(System.Guid? id)
+    public async Task<IActionResult> DeleteRegion(Guid id)
     {
         var region = await _context.Regions.FindAsync(id);
         if (region == null)
@@ -88,10 +97,10 @@ public class RegionsController : ControllerBase
         _context.Regions.Remove(region);
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(_mapper.Map<RegionDto>(region));
     }
 
-    private bool RegionExists(System.Guid? id)
+    private bool RegionExists(Guid id)
     {
         return _context.Regions.Any(e => e.Id == id);
     }

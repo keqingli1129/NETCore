@@ -1,27 +1,33 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Models;
+using NZWalks.API.Models.DTOs;
 
 [Route("api/[controller]")]
 [ApiController]
 public class DifficultiesController : ControllerBase
 {
     private readonly MVCNetNZWalksContext _context;
-    public DifficultiesController(MVCNetNZWalksContext context)
+    private readonly IMapper _mapper;
+
+    public DifficultiesController(MVCNetNZWalksContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // GET: api/Difficulty
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Difficulty>>> GetDifficulty()
+    public async Task<ActionResult<IEnumerable<DifficultyDto>>> GetDifficulty()
     {
-        return await _context.Difficulties.ToListAsync();
+        var difficulties = await _context.Difficulties.ToListAsync();
+        return Ok(_mapper.Map<List<DifficultyDto>>(difficulties));
     }
 
     // GET: api/Difficulty/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Difficulty>> GetDifficulty(System.Guid id)
+    public async Task<ActionResult<DifficultyDto>> GetDifficulty(Guid id)
     {
         var difficulty = await _context.Difficulties.FindAsync(id);
 
@@ -30,20 +36,21 @@ public class DifficultiesController : ControllerBase
             return NotFound();
         }
 
-        return difficulty;
+        return Ok(_mapper.Map<DifficultyDto>(difficulty));
     }
 
     // PUT: api/Difficulty/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutDifficulty(System.Guid? id, Difficulty difficulty)
+    public async Task<IActionResult> PutDifficulty(Guid id, UpdateDifficultyRequestDto updateDifficultyRequestDto)
     {
-        if (id != difficulty.Id)
+        var difficulty = await _context.Difficulties.FindAsync(id);
+
+        if (difficulty == null)
         {
-            return BadRequest();
+            return NotFound();
         }
 
-        _context.Entry(difficulty).State = EntityState.Modified;
+        _mapper.Map(updateDifficultyRequestDto, difficulty);
 
         try
         {
@@ -61,23 +68,25 @@ public class DifficultiesController : ControllerBase
             }
         }
 
-        return NoContent();
+        return Ok(_mapper.Map<DifficultyDto>(difficulty));
     }
 
     // POST: api/Difficulty
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<Difficulty>> PostDifficulty(Difficulty difficulty)
+    public async Task<ActionResult<DifficultyDto>> PostDifficulty(AddDifficultyRequestDto addDifficultyRequestDto)
     {
+        var difficulty = _mapper.Map<Difficulty>(addDifficultyRequestDto);
+
         _context.Difficulties.Add(difficulty);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetDifficulty", new { id = difficulty.Id }, difficulty);
+        var difficultyDto = _mapper.Map<DifficultyDto>(difficulty);
+        return CreatedAtAction(nameof(GetDifficulty), new { id = difficultyDto.Id }, difficultyDto);
     }
 
     // DELETE: api/Difficulty/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteDifficulty(System.Guid? id)
+    public async Task<IActionResult> DeleteDifficulty(Guid id)
     {
         var difficulty = await _context.Difficulties.FindAsync(id);
         if (difficulty == null)
@@ -88,10 +97,10 @@ public class DifficultiesController : ControllerBase
         _context.Difficulties.Remove(difficulty);
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(_mapper.Map<DifficultyDto>(difficulty));
     }
 
-    private bool DifficultyExists(System.Guid? id)
+    private bool DifficultyExists(Guid id)
     {
         return _context.Difficulties.Any(e => e.Id == id);
     }
