@@ -1,8 +1,13 @@
+using Microsoft.EntityFrameworkCore;
+using NZWalks.API.Models;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddDbContext<MVCNetNZWalksContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("NZWalksConnectionString")));
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
