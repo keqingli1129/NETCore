@@ -1,35 +1,35 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Models;
 using NZWalks.API.Models.DTOs;
+using NZWalks.API.Repositories;
 
 [Route("api/[controller]")]
 [ApiController]
 public class RegionsController : ControllerBase
 {
-    private readonly MVCNetNZWalksContext _context;
+    private readonly IRegionRepository _regionRepository;
     private readonly IMapper _mapper;
 
-    public RegionsController(MVCNetNZWalksContext context, IMapper mapper)
+    public RegionsController(IRegionRepository regionRepository, IMapper mapper)
     {
-        _context = context;
+        _regionRepository = regionRepository;
         _mapper = mapper;
     }
 
-    // GET: api/Region
+    // GET: api/Regions
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RegionDto>>> GetRegion()
     {
-        var regions = await _context.Regions.ToListAsync();
+        var regions = await _regionRepository.GetAllAsync();
         return Ok(_mapper.Map<List<RegionDto>>(regions));
     }
 
-    // GET: api/Region/5
+    // GET: api/Regions/5
     [HttpGet("{id}")]
     public async Task<ActionResult<RegionDto>> GetRegion(int id)
     {
-        var region = await _context.Regions.FindAsync(id);
+        var region = await _regionRepository.GetAsync(id);
 
         if (region == null)
         {
@@ -39,69 +39,51 @@ public class RegionsController : ControllerBase
         return Ok(_mapper.Map<RegionDto>(region));
     }
 
-    // PUT: api/Region/5
+    // PUT: api/Regions/5
     [HttpPut("{id}")]
     public async Task<IActionResult> PutRegion(int id, UpdateRegionRequestDto updateRegionRequestDto)
     {
-        var region = await _context.Regions.FindAsync(id);
+        var region = _mapper.Map<Region>(updateRegionRequestDto);
+        var updatedRegion = await _regionRepository.UpdateAsync(id, region);
 
-        if (region == null)
+        if (updatedRegion == null)
         {
             return NotFound();
         }
 
-        _mapper.Map(updateRegionRequestDto, region);
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!RegionExists(id))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
-        }
-
-        return Ok(_mapper.Map<RegionDto>(region));
+        return Ok(_mapper.Map<RegionDto>(updatedRegion));
     }
 
-    // POST: api/Region
+    // POST: api/Regions
     [HttpPost]
     public async Task<ActionResult<RegionDto>> PostRegion(AddRegionRequestDto addRegionRequestDto)
     {
         var region = _mapper.Map<Region>(addRegionRequestDto);
-
-        _context.Regions.Add(region);
-        await _context.SaveChangesAsync();
+        region = await _regionRepository.AddAsync(region);
 
         var regionDto = _mapper.Map<RegionDto>(region);
         return CreatedAtAction(nameof(GetRegion), new { id = regionDto.Id }, regionDto);
     }
 
-    // DELETE: api/Region/5
+    // DELETE: api/Regions/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRegion(int id)
     {
-        var region = await _context.Regions.FindAsync(id);
+        if (await _regionRepository.HasWalksAsync(id))
+        {
+            return Problem(
+                title: "Region is in use",
+                detail: $"Region {id} cannot be deleted because one or more walks reference it. Delete those walks first.",
+                statusCode: StatusCodes.Status409Conflict);
+        }
+
+        var region = await _regionRepository.DeleteAsync(id);
+
         if (region == null)
         {
             return NotFound();
         }
 
-        _context.Regions.Remove(region);
-        await _context.SaveChangesAsync();
-
         return Ok(_mapper.Map<RegionDto>(region));
-    }
-
-    private bool RegionExists(int id)
-    {
-        return _context.Regions.Any(e => e.Id == id);
     }
 }

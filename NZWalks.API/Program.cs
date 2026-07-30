@@ -10,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<MVCNetNZWalksContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("NZWalksConnectionString")));
 builder.Services.AddScoped<IWalkRepository, WalkRepository>();
+builder.Services.AddScoped<IRegionRepository, RegionRepository>();
+builder.Services.AddScoped<IDifficultyRepository, DifficultyRepository>();
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(Program));
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
