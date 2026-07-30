@@ -1,6 +1,6 @@
 namespace NZWalks.API.Models.DTOs;
 
-public record DifficultyDto(Guid Id, string Name);
+public record DifficultyDto(int Id, string Name);
 
 public record AddDifficultyRequestDto(string Name);
 

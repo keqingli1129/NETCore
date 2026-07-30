@@ -27,7 +27,7 @@ public class DifficultiesController : ControllerBase
 
     // GET: api/Difficulty/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<DifficultyDto>> GetDifficulty(Guid id)
+    public async Task<ActionResult<DifficultyDto>> GetDifficulty(int id)
     {
         var difficulty = await _context.Difficulties.FindAsync(id);
 
@@ -41,7 +41,7 @@ public class DifficultiesController : ControllerBase
 
     // PUT: api/Difficulty/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutDifficulty(Guid id, UpdateDifficultyRequestDto updateDifficultyRequestDto)
+    public async Task<IActionResult> PutDifficulty(int id, UpdateDifficultyRequestDto updateDifficultyRequestDto)
     {
         var difficulty = await _context.Difficulties.FindAsync(id);
 
@@ -86,7 +86,7 @@ public class DifficultiesController : ControllerBase
 
     // DELETE: api/Difficulty/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteDifficulty(Guid id)
+    public async Task<IActionResult> DeleteDifficulty(int id)
     {
         var difficulty = await _context.Difficulties.FindAsync(id);
         if (difficulty == null)
@@ -100,7 +100,7 @@ public class DifficultiesController : ControllerBase
         return Ok(_mapper.Map<DifficultyDto>(difficulty));
     }
 
-    private bool DifficultyExists(Guid id)
+    private bool DifficultyExists(int id)
     {
         return _context.Difficulties.Any(e => e.Id == id);
     }

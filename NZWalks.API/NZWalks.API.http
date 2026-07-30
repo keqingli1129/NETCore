@@ -1,6 +1,139 @@
-@NZWalks.API_HostAddress = http://localhost:5062
+@NZWalks.API_HostAddress = https://localhost:44383
+@regionId = 1
+@difficultyId = 1
+@walkId = 1
 
+# Host must have NO trailing slash: appending "/api/Regions" to a trailing
+# slash yields "//api/Regions", which ASP.NET Core routing does not normalize,
+# so every request returns 404.
+# Other launch profiles: https://localhost:7223 (https), https://localhost:44383 (IIS Express).
+# Ids above are database-generated identity values: run a POST first, then
+# update them to the ids it returns.
+
+# --- Regions (api/Regions) ---
+
+### Get all regions
+GET {{NZWalks.API_HostAddress}}/api/Regions
+Accept: application/json
+
+### Get region by id
+GET {{NZWalks.API_HostAddress}}/api/Regions/{{regionId}}
+Accept: application/json
+
+### Create a region
+POST {{NZWalks.API_HostAddress}}/api/Regions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "code": "AKL",
+  "name": "Auckland",
+  "regionImageUrl": "https://images.pexels.com/photos/298018/pexels-photo-298018.jpeg"
+}
+
+### Update a region
+PUT {{NZWalks.API_HostAddress}}/api/Regions/{{regionId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "code": "AKL",
+  "name": "Auckland Region",
+  "regionImageUrl": "https://images.pexels.com/photos/298018/pexels-photo-298018.jpeg"
+}
+
+### Delete a region
+DELETE {{NZWalks.API_HostAddress}}/api/Regions/{{regionId}}
+Accept: application/json
+
+# --- Difficulties (api/Difficulties) ---
+
+### Get all difficulties
+GET {{NZWalks.API_HostAddress}}/api/Difficulties
+Accept: application/json
+
+### Get difficulty by id
+GET {{NZWalks.API_HostAddress}}/api/Difficulties/{{difficultyId}}
+Accept: application/json
+
+### Create a difficulty
+POST {{NZWalks.API_HostAddress}}/api/Difficulties
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Easy"
+}
+
+### Update a difficulty
+PUT {{NZWalks.API_HostAddress}}/api/Difficulties/{{difficultyId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Moderate"
+}
+
+### Delete a difficulty
+DELETE {{NZWalks.API_HostAddress}}/api/Difficulties/{{difficultyId}}
+Accept: application/json
+
+# --- Walks (api/Walks). RegionId and DifficultyId must already exist ---
+
+### Get all walks
+GET {{NZWalks.API_HostAddress}}/api/Walks
+Accept: application/json
+
+### Get walk by id
+GET {{NZWalks.API_HostAddress}}/api/Walks/{{walkId}}
+Accept: application/json
+
+### Create a walk
+POST {{NZWalks.API_HostAddress}}/api/Walks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Coromandel Coastal Walk",
+  "description": "A scenic coastal track with views over the Hauraki Gulf.",
+  "lengthInKm": 10.5,
+  "walkImageUrl": "https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg",
+  "regionId": {{regionId}},
+  "difficultyId": {{difficultyId}}
+}
+
+### Update a walk
+PUT {{NZWalks.API_HostAddress}}/api/Walks/{{walkId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Coromandel Coastal Walk",
+  "description": "Updated description for the coastal track.",
+  "lengthInKm": 12.0,
+  "walkImageUrl": "https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg",
+  "regionId": {{regionId}},
+  "difficultyId": {{difficultyId}}
+}
+
+### Delete a walk
+DELETE {{NZWalks.API_HostAddress}}/api/Walks/{{walkId}}
+Accept: application/json
+
+### ---------------------------------------------------------------
+### Template / stub endpoints (not part of the real domain)
+### ---------------------------------------------------------------
+
+### Weather forecast (project template leftover)
 GET {{NZWalks.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+### Students stub — note the misspelled route "Sudents"
+GET {{NZWalks.API_HostAddress}}/api/Sudents
+Accept: application/json
+
+### OpenAPI document (Development only)
+GET {{NZWalks.API_HostAddress}}/openapi/v1.json
 Accept: application/json
 
 ###

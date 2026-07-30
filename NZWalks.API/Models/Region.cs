@@ -7,7 +7,7 @@ namespace NZWalks.API.Models;
 
 public partial class Region
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     public string Code { get; set; }
 

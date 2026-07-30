@@ -7,7 +7,7 @@ namespace NZWalks.API.Models;
 
 public partial class Walk
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
     public string Name { get; set; }
 
@@ -17,9 +17,9 @@ public partial class Walk
 
     public string WalkImageUrl { get; set; }
 
-    public Guid RegionId { get; set; }
+    public int RegionId { get; set; }
 
-    public Guid DifficultyId { get; set; }
+    public int DifficultyId { get; set; }
 
     public virtual Difficulty Difficulty { get; set; }
 

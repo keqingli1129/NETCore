@@ -31,7 +31,7 @@ public class WalksController : ControllerBase
 
     // GET: api/Walk/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<WalkDto>> GetWalk(Guid id)
+    public async Task<ActionResult<WalkDto>> GetWalk(int id)
     {
         var walk = await _context.Walks
             .Include(w => w.Region)
@@ -48,7 +48,7 @@ public class WalksController : ControllerBase
 
     // PUT: api/Walk/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutWalk(Guid id, UpdateWalkRequestDto updateWalkRequestDto)
+    public async Task<IActionResult> PutWalk(int id, UpdateWalkRequestDto updateWalkRequestDto)
     {
         var walk = await _context.Walks.FindAsync(id);
 
@@ -103,7 +103,7 @@ public class WalksController : ControllerBase
 
     // DELETE: api/Walk/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteWalk(Guid id)
+    public async Task<IActionResult> DeleteWalk(int id)
     {
         var walk = await _context.Walks.FindAsync(id);
         if (walk == null)
@@ -117,7 +117,7 @@ public class WalksController : ControllerBase
         return Ok(_mapper.Map<WalkDto>(walk));
     }
 
-    private bool WalkExists(Guid id)
+    private bool WalkExists(int id)
     {
         return _context.Walks.Any(e => e.Id == id);
     }

@@ -23,28 +23,25 @@ public partial class MVCNetNZWalksContext : DbContext
     {
         modelBuilder.Entity<Difficulty>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Difficul__3214EC07D04C3AD2");
+            entity.HasKey(e => e.Id).HasName("PK__Difficulty__3214EC07");
 
             entity.ToTable("Difficulty");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Name).IsRequired();
         });
 
         modelBuilder.Entity<Region>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Regions__3214EC072CFFE55B");
+            entity.HasKey(e => e.Id).HasName("PK__Regions__3214EC07");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Code).IsRequired();
             entity.Property(e => e.Name).IsRequired();
         });
 
         modelBuilder.Entity<Walk>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Walks__3214EC072F6245D5");
+            entity.HasKey(e => e.Id).HasName("PK__Walks__3214EC07");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Description).IsRequired();
             entity.Property(e => e.Name).IsRequired();
 

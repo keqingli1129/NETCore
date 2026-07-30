@@ -27,7 +27,7 @@ public class RegionsController : ControllerBase
 
     // GET: api/Region/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<RegionDto>> GetRegion(Guid id)
+    public async Task<ActionResult<RegionDto>> GetRegion(int id)
     {
         var region = await _context.Regions.FindAsync(id);
 
@@ -41,7 +41,7 @@ public class RegionsController : ControllerBase
 
     // PUT: api/Region/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutRegion(Guid id, UpdateRegionRequestDto updateRegionRequestDto)
+    public async Task<IActionResult> PutRegion(int id, UpdateRegionRequestDto updateRegionRequestDto)
     {
         var region = await _context.Regions.FindAsync(id);
 
@@ -86,7 +86,7 @@ public class RegionsController : ControllerBase
 
     // DELETE: api/Region/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteRegion(Guid id)
+    public async Task<IActionResult> DeleteRegion(int id)
     {
         var region = await _context.Regions.FindAsync(id);
         if (region == null)
@@ -100,7 +100,7 @@ public class RegionsController : ControllerBase
         return Ok(_mapper.Map<RegionDto>(region));
     }
 
-    private bool RegionExists(Guid id)
+    private bool RegionExists(int id)
     {
         return _context.Regions.Any(e => e.Id == id);
     }
