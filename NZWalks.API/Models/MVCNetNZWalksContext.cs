@@ -2,11 +2,13 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace NZWalks.API.Models;
 
-public partial class MVCNetNZWalksContext : DbContext
+public partial class MVCNetNZWalksContext : IdentityDbContext
 {
     public MVCNetNZWalksContext(DbContextOptions<MVCNetNZWalksContext> options)
         : base(options)
@@ -21,6 +23,8 @@ public partial class MVCNetNZWalksContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<Difficulty>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Difficulty__3214EC07");
