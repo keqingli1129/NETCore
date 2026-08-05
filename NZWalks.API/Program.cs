@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using NZWalks.API.Models;
 using NZWalks.API.Repositories;
 using OpenTelemetry;
@@ -31,7 +32,26 @@ builder.Logging.AddOpenTelemetry();
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(Program));
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, ct) =>
+    {
+        document.Components ??= new();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Enter your JWT token"
+        };
+        document.Security ??= [];
+        var requirement = new OpenApiSecurityRequirement();
+        requirement[new OpenApiSecuritySchemeReference("Bearer", document)] = [];
+        document.Security.Add(requirement);
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
 
@@ -39,7 +59,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+    {
+        options.Authentication = new ScalarAuthenticationOptions
+        {
+            PreferredSecuritySchemes = ["Bearer"],
+        };
+    });
 }
 
 app.UseHttpsRedirection();
