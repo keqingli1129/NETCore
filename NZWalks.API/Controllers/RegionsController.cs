@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NZWalks.API.Models;
 using NZWalks.API.Models.DTOs;
 using NZWalks.API.Repositories;
+using Microsoft.AspNetCore.Hosting;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -11,12 +12,31 @@ public class RegionsController : ControllerBase
     private readonly IRegionRepository _regionRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<RegionsController> _logger;
+    private readonly IWebHostEnvironment _environment;
 
-    public RegionsController(IRegionRepository regionRepository, IMapper mapper, ILogger<RegionsController> logger)
+    public RegionsController(IRegionRepository regionRepository, IMapper mapper, ILogger<RegionsController> logger, IWebHostEnvironment environment)
     {
         _regionRepository = regionRepository;
         _mapper = mapper;
         _logger = logger;
+        _environment = environment;
+    }
+
+    private async Task<string?> SaveImageAsync(IFormFile? image)
+    {
+        if (image is null || image.Length == 0)
+            return null;
+
+        var uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "regions");
+        Directory.CreateDirectory(uploadsFolder);
+
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await image.CopyToAsync(stream);
+
+        return $"/images/regions/{fileName}";
     }
 
     // GET: api/Regions
@@ -47,10 +67,11 @@ public class RegionsController : ControllerBase
 
     // PUT: api/Regions/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutRegion(int id, UpdateRegionRequestDto updateRegionRequestDto)
+    public async Task<IActionResult> PutRegion(int id, [FromForm] UpdateRegionRequestDto updateRegionRequestDto)
     {
         _logger.LogInformation("PutRegion action invoked for id {RegionId}", id);
         var region = _mapper.Map<Region>(updateRegionRequestDto);
+        region.RegionImageUrl = await SaveImageAsync(updateRegionRequestDto.Image);
         var updatedRegion = await _regionRepository.UpdateAsync(id, region);
 
         if (updatedRegion == null)
@@ -64,10 +85,11 @@ public class RegionsController : ControllerBase
 
     // POST: api/Regions
     [HttpPost]
-    public async Task<ActionResult<RegionDto>> PostRegion(AddRegionRequestDto addRegionRequestDto)
+    public async Task<ActionResult<RegionDto>> PostRegion([FromForm] AddRegionRequestDto addRegionRequestDto)
     {
         _logger.LogInformation("PostRegion action invoked");
         var region = _mapper.Map<Region>(addRegionRequestDto);
+        region.RegionImageUrl = await SaveImageAsync(addRegionRequestDto.Image);
         region = await _regionRepository.AddAsync(region);
 
         var regionDto = _mapper.Map<RegionDto>(region);
