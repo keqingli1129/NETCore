@@ -27,7 +27,9 @@ public class RegionsController : ControllerBase
         if (image is null || image.Length == 0)
             return null;
 
-        var uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "regions");
+        var webRootPath = _environment.WebRootPath
+            ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+        var uploadsFolder = Path.Combine(webRootPath, "images", "regions");
         Directory.CreateDirectory(uploadsFolder);
 
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
@@ -67,6 +69,7 @@ public class RegionsController : ControllerBase
 
     // PUT: api/Regions/5
     [HttpPut("{id}")]
+    [Consumes("multipart/form-data")]
     public async Task<IActionResult> PutRegion(int id, [FromForm] UpdateRegionRequestDto updateRegionRequestDto)
     {
         _logger.LogInformation("PutRegion action invoked for id {RegionId}", id);
@@ -85,6 +88,7 @@ public class RegionsController : ControllerBase
 
     // POST: api/Regions
     [HttpPost]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<RegionDto>> PostRegion([FromForm] AddRegionRequestDto addRegionRequestDto)
     {
         _logger.LogInformation("PostRegion action invoked");
