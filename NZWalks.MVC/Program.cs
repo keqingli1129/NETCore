@@ -8,6 +8,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient<APIClient>(client =>
 {
     client.BaseAddress = new Uri("https://localhost:7223/");
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 var app = builder.Build();
