@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using NZWalks.MVC.ApiClients;
+using NZWalks.MVC.Models;
 
 namespace NZWalks.MVC.Controllers;
 
@@ -62,4 +63,41 @@ public class RegionsController : Controller
             return View(model: null);
         }
     }
+
+    [HttpGet]
+    public IActionResult Create() => View(new RegionFormViewModel());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(RegionFormViewModel form, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(form);
+        }
+
+        try
+        {
+            await _api.CreateAsync(form.Code, form.Name, ToFileParameter(form.Image), ct);
+            return RedirectToAction(nameof(Index));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            _logger.LogError(ex, "NZWalks API call failed creating region");
+            ViewData["ApiError"] = UnreachableMessage;
+            return View(form);
+        }
+    }
+
+    private static FileParameter? ToFileParameter(IFormFile? file)
+        => file is null || file.Length == 0
+            ? null
+            : new FileParameter(file.OpenReadStream(), file.FileName, file.ContentType);
 }
