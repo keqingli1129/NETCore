@@ -1,3 +1,6 @@
+using NZWalks.MVC.ApiClients;
+using NZWalks.MVC.Models;
+
 namespace NZWalks.MVC
 {
     public class Program
@@ -8,6 +11,17 @@ namespace NZWalks.MVC
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
+            var apiOptions = builder.Configuration.GetSection("NZWalksApi").Get<NZWalksApiOptions>();
+            if (string.IsNullOrWhiteSpace(apiOptions?.BaseUrl))
+            {
+                throw new InvalidOperationException("Configuration value 'NZWalksApi:BaseUrl' not found.");
+            }
+
+            builder.Services.AddSingleton(apiOptions);
+            builder.Services.AddHttpClient<INZWalksApiClient, NZWalksApiClient>(client =>
+                client.BaseAddress = new Uri(apiOptions.BaseUrl));
+            builder.Services.AddScoped<IRegionsApi, RegionsApi>();
 
             var app = builder.Build();
 
