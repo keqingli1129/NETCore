@@ -1,0 +1,44 @@
+@model IReadOnlyList<RegionDto>
+@inject NZWalksApiOptions ApiOptions
+@{
+    ViewData["Title"] = "Regions";
+}
+
+<h1>Regions</h1>
+<partial name="_ApiError" />
+
+<p><a class="btn btn-primary" asp-action="Create">Create New</a></p>
+
+@if (!Model.Any())
+{
+    <p>No regions to show.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr><th>Code</th><th>Name</th><th>Image</th><th></th></tr>
+        </thead>
+        <tbody>
+        @foreach (var region in Model)
+        {
+            <tr>
+                <td>@region.Code</td>
+                <td>@region.Name</td>
+                <td>
+                    @{ var imageUrl = ApiOptions.ResolveUrl(region.RegionImageUrl); }
+                    @if (imageUrl is not null)
+                    {
+                        <img src="@imageUrl" alt="@region.Name" style="max-height:60px" />
+                    }
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@region.Id">Details</a> |
+                    <a asp-action="Edit" asp-route-id="@region.Id">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@region.Id">Delete</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

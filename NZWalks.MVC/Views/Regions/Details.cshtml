@@ -1,0 +1,24 @@
+@model RegionDto
+@inject NZWalksApiOptions ApiOptions
+@{
+    ViewData["Title"] = "Region details";
+}
+
+<h1>Region details</h1>
+<partial name="_ApiError" />
+
+@if (Model is not null)
+{
+    <dl class="row">
+        <dt class="col-sm-2">Code</dt><dd class="col-sm-10">@Model.Code</dd>
+        <dt class="col-sm-2">Name</dt><dd class="col-sm-10">@Model.Name</dd>
+    </dl>
+
+    var imageUrl = ApiOptions.ResolveUrl(Model.RegionImageUrl);
+    if (imageUrl is not null)
+    {
+        <img src="@imageUrl" alt="@Model.Name" class="img-fluid" style="max-height:300px" />
+    }
+}
+
+<p class="mt-3"><a asp-action="Index">Back to list</a></p>
