@@ -4,7 +4,7 @@
 
 ASP.NET Core MVC web application targeting **.NET 10** (C# 14). Uses the default MVC template with controllers and Razor views.
 
-This project is the **front end half of the NZWalks stack** inside `NETCore.sln`. It is currently an unmodified scaffold — no DbContext, no authentication, and no client for its paired API yet. Anything in those areas is new work, not a modification of existing wiring.
+This project is the **front end half of the NZWalks stack** inside `NETCore.sln`. It consumes `NZWalks.API` through a typed client generated at build time by NSwag from a committed OpenAPI document, and ships a full Regions CRUD UI. It still has no DbContext and no authentication.
 
 ## Related projects
 
@@ -25,6 +25,19 @@ Note that `PlainNetCoreMVC` already solves the "MVC app calling a sibling Web AP
 - JWT bearer auth is **configured but not enforced**: `Program.cs` wires `AddJwtBearer` and `Auth/Login` issues tokens, but no controller carries `[Authorize]`, so every endpoint is currently open. A consumer works without a token today — don't assume otherwise, and re-check if `[Authorize]` is added later.
 - Request/response shapes live in `NZWalks.API/Models/DTOs` (`RegionDto`, `WalkDto`, `DifficultyDto`, `LoginRequestDto`, `LoginResponseDto`, `RegisterRequestDto`). Its EF entities are internal to the API; consume the DTOs, not the entities.
 - Reads the `NZWalksConnectionString` connection string. This MVC project has no `ConnectionStrings` section at all and shouldn't grow one if it goes through the API.
+
+## Refreshing the API contract
+
+Codegen reads the committed `OpenAPIs/nzwalks.v1.json`, so the build never needs the API running. Refresh it after any change to the API's routes or DTOs:
+
+```bash
+dotnet run --project ./NZWalks.API
+curl -sk "https://localhost:7223/openapi/v1.json" -o NZWalks.MVC/OpenAPIs/nzwalks.v1.json
+```
+
+Then rebuild and fix any compile errors in `ApiClients/RegionsApi.cs`, where generated names are referenced.
+
+Known API-side behaviour: `PUT api/Regions/{id}` sets the image URL from the uploaded file unconditionally, so saving an edit without choosing a file clears the region's existing image. That lives in `NZWalks.API`, not here.
 
 ## Build & Run
 
@@ -55,5 +68,7 @@ From the repo root: `dotnet run --project ./NZWalks.MVC` (and `./NZWalks.API` fo
 
 - Follow standard ASP.NET Core MVC patterns (controllers return views, models are POCOs)
 - Use `MapStaticAssets()` and `WithStaticAssets()` for static file serving
-- No external NuGet dependencies beyond the SDK
+- Dependencies are limited to the NSwag codegen toolchain (`NSwag.ApiDescription.Client`, `Microsoft.Extensions.ApiDescription.Client`) plus `Newtonsoft.Json`, which generated client code requires at runtime.
+- The API client is **generated into `obj/` and never committed** — unlike `PlainNetCoreMVC`, which checks its NSwag output into source control. The only committed artifact is `OpenAPIs/nzwalks.v1.json`.
+- Controllers depend on `IRegionsApi` (`ApiClients/`), a thin facade over the generated client. Generated method names change whenever an API action is renamed; keep that churn inside `RegionsApi`.
 - `Program` is a `public class Program` inside the `NZWalks.MVC` namespace, not top-level statements. The other hosts in the solution expose `Program` as a `public partial class` so `WebApplicationFactory<Program>` can reach it — match that shape if integration tests are added here.
