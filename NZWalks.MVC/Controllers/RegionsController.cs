@@ -23,7 +23,14 @@ public class RegionsController : Controller
             var regions = await _api.GetAllAsync(ct);
             return View(regions);
         }
-        catch (Exception ex) when (ex is ApiException or HttpRequestException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
         {
             _logger.LogError(ex, "NZWalks API call failed listing regions");
             ViewData["ApiError"] = UnreachableMessage;
@@ -41,7 +48,14 @@ public class RegionsController : Controller
         {
             return NotFound();
         }
-        catch (Exception ex) when (ex is ApiException or HttpRequestException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
         {
             _logger.LogError(ex, "NZWalks API call failed loading region {RegionId}", id);
             ViewData["ApiError"] = UnreachableMessage;
