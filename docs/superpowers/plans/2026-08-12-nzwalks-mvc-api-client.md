@@ -271,13 +271,30 @@ public sealed class NZWalksApiOptions
     /// Turns an API-relative path (e.g. "/images/regions/abc.png") into an absolute
     /// URL. NZWalks.API saves uploads into its own wwwroot and returns host-relative
     /// paths, which would 404 against this app's host if rendered verbatim.
+    /// Already-absolute URLs pass through untouched.
     /// </summary>
     public string? ResolveUrl(string? apiRelativePath)
-        => string.IsNullOrWhiteSpace(apiRelativePath)
-            ? null
-            : $"{BaseUrl.TrimEnd('/')}/{apiRelativePath.TrimStart('/')}";
+    {
+        if (string.IsNullOrWhiteSpace(apiRelativePath))
+        {
+            return null;
+        }
+
+        // Seeded regions hold absolute URLs (https://example.com/...); uploads return
+        // host-relative paths. Prepending the base URL to an absolute URL yields
+        // "https://localhost:7223/https://example.com/..." and a broken image.
+        if (Uri.TryCreate(apiRelativePath, UriKind.Absolute, out var absolute)
+            && (absolute.Scheme == Uri.UriSchemeHttp || absolute.Scheme == Uri.UriSchemeHttps))
+        {
+            return apiRelativePath;
+        }
+
+        return $"{BaseUrl.TrimEnd('/')}/{apiRelativePath.TrimStart('/')}";
+    }
 }
 ```
+
+**Amended 2026-08-12 after Task 4 runtime verification.** The original one-line body prepended the base URL unconditionally, which mangled the five seeded regions' absolute `RegionImageUrl` values and broke every image on the list and details pages. Human ruling: fix `ResolveUrl` rather than the seed data or the call sites.
 
 - [ ] **Step 2: Add config to both appsettings files**
 
