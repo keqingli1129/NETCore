@@ -1,0 +1,40 @@
+@model RegionFormViewModel
+@inject NZWalksApiOptions ApiOptions
+@{
+    ViewData["Title"] = "Edit region";
+}
+
+<h1>Edit region</h1>
+<partial name="_ApiError" />
+
+@{ var existingImageUrl = ApiOptions.ResolveUrl(Model.ExistingImageUrl); }
+@if (existingImageUrl is not null)
+{
+    <p><img src="@existingImageUrl" alt="@Model.Name" style="max-height:120px" /></p>
+    <p class="text-muted">Submitting without choosing a file clears the current image.</p>
+}
+
+<form asp-action="Edit" enctype="multipart/form-data" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="ExistingImageUrl" />
+    <div class="mb-3">
+        <label asp-for="Code" class="form-label"></label>
+        <input asp-for="Code" class="form-control" />
+        <span asp-validation-for="Code" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Image" class="form-label"></label>
+        <input asp-for="Image" type="file" class="form-control" accept="image/*" />
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

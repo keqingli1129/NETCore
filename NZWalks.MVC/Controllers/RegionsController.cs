@@ -96,6 +96,71 @@ public class RegionsController : Controller
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id, CancellationToken ct)
+    {
+        try
+        {
+            var region = await _api.GetAsync(id, ct);
+            return View(new RegionFormViewModel
+            {
+                Code = region.Code,
+                Name = region.Name,
+                ExistingImageUrl = region.RegionImageUrl
+            });
+        }
+        catch (ApiException ex) when (ex.StatusCode == StatusCodes.Status404NotFound)
+        {
+            return NotFound();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            _logger.LogError(ex, "NZWalks API call failed loading region {RegionId} for edit", id);
+            ViewData["ApiError"] = UnreachableMessage;
+            return View(new RegionFormViewModel());
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, RegionFormViewModel form, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(form);
+        }
+
+        try
+        {
+            await _api.UpdateAsync(id, form.Code, form.Name, ToFileParameter(form.Image), ct);
+            return RedirectToAction(nameof(Index));
+        }
+        catch (ApiException ex) when (ex.StatusCode == StatusCodes.Status404NotFound)
+        {
+            return NotFound();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            _logger.LogError(ex, "NZWalks API call failed updating region {RegionId}", id);
+            ViewData["ApiError"] = UnreachableMessage;
+            return View(form);
+        }
+    }
+
     private static FileParameter? ToFileParameter(IFormFile? file)
         => file is null || file.Length == 0
             ? null
