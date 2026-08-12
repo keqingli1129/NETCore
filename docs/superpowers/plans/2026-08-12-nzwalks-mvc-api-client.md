@@ -581,7 +581,27 @@ git commit -m "Add Regions list and details pages backed by the API client"
 
 ### Task 5: Regions create with image upload
 
-**Gated on Task 1 Step 4 passing.** If the contract has no binary `image` property, stop and report.
+**Gate status: PASSED.** Task 1 confirmed `/api/Regions` POST is `multipart/form-data` with `Image` resolving to `{"type":"string","format":"binary"}`. Proceed.
+
+**AMENDMENT (2026-08-12, applies to every action in this task).** The exception filter shown in the code below is superseded. `catch (Exception ex) when (ex is ApiException or HttpRequestException)` misses `TaskCanceledException`/`OperationCanceledException`, so a hung API or a client navigating away produces an unhandled 500 instead of the friendly banner. Every action that calls the API must use this shape instead — a client-abort catch FIRST, then the widened filter:
+
+```csharp
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            // keep this action's own log message, ViewData assignment and return value
+        }
+```
+
+Order matters: the client-abort catch must precede the widened filter, or the widened filter swallows it first. `TaskCanceledException` derives from `OperationCanceledException`, so naming the base covers both. Any `catch (ApiException ex) when (ex.StatusCode == ...)` clause stays ahead of both.
+
+**Also note:** `RegionsApi.CreateAsync` already handles two quirks internally, so this task's controller does not need to: a null image is substituted with a zero-length `FileParameter` (the generated client throws `ArgumentNullException` on null), and the API's HTTP 201 response — which the contract declares as 200, causing the generated client to throw — is caught and parsed. Passing `null` for no-file-chosen is correct and works.
 
 **Files:**
 - Create: `NZWalks.MVC/Models/RegionFormViewModel.cs`
@@ -736,7 +756,31 @@ git commit -m "Add Regions create page with multipart image upload"
 
 ### Task 6: Regions edit
 
-**Gated on Task 1 Step 4 passing**, same as Task 5.
+**Gate status: PASSED**, same as Task 5.
+
+**AMENDMENT (2026-08-12, applies to both actions in this task).** The exception filters shown in the code below are superseded. `catch (Exception ex) when (ex is ApiException or HttpRequestException)` misses `TaskCanceledException`/`OperationCanceledException`, so a hung API or a client navigating away produces an unhandled 500 instead of the friendly banner. Each action must use this shape — the existing 404 catch first, then a client-abort catch, then the widened filter:
+
+```csharp
+        catch (ApiException ex) when (ex.StatusCode == StatusCodes.Status404NotFound)
+        {
+            return NotFound();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            // keep this action's own log message, ViewData assignment and return value
+        }
+```
+
+Order matters: the client-abort catch must precede the widened filter. `TaskCanceledException` derives from `OperationCanceledException`, so naming the base covers both.
+
+**Also note:** `RegionsApi.UpdateAsync` substitutes a zero-length `FileParameter` when `image` is null, so passing `null` for no-file-chosen works and does not throw. It also performs PUT-then-GET internally to satisfy its `Task<RegionDto>` contract; that is a deliberate, human-approved decision — do not try to change it.
 
 **Files:**
 - Create: `NZWalks.MVC/Views/Regions/Edit.cshtml`
@@ -880,6 +924,26 @@ git commit -m "Add Regions edit page"
 ---
 
 ### Task 7: Regions delete
+
+**AMENDMENT (2026-08-12, applies to both actions in this task).** The exception filters shown in the code below are superseded. `catch (Exception ex) when (ex is ApiException or HttpRequestException)` misses `TaskCanceledException`/`OperationCanceledException`, so a hung API or a client navigating away produces an unhandled 500 instead of the friendly banner. Each action must use this shape — any 404 catch first, then a client-abort catch, then the widened filter:
+
+```csharp
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            // keep this action's own log message, ViewData assignment and return value
+        }
+```
+
+Order matters: the client-abort catch must precede the widened filter. `TaskCanceledException` derives from `OperationCanceledException`, so naming the base covers both.
+
+In `DeleteConfirmed`, the brief's nested reload-after-failure `try`/`catch` must apply the same widening to its inner catch. Note the inner catch's variable name must not shadow the outer one.
 
 **Files:**
 - Create: `NZWalks.MVC/Views/Regions/Delete.cshtml`
