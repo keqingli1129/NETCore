@@ -21,7 +21,8 @@
 - **No test project** — this was an explicit spec decision (`NZWalks.API.Tests` is an empty placeholder; PlainNetCore has none). Each task's verification is `dotnet build` plus a stated runtime check against a running API. This deliberately replaces the usual TDD cycle; do not add a test project without asking.
 - Ports: `NZWalks.API` `https://localhost:7223`, `NZWalks.MVC` `https://localhost:7000`.
 - `dotnet dev-certs https --trust` must have been run, or server-to-server HTTPS calls fail.
-- Commit directly to `main` (user's explicit choice). `bin/`, `obj/` and `*.user` are already gitignored — never force-add them.
+- Work on branch `feature/nzwalks-mvc-api-client` (user's explicit choice). `bin/`, `obj/` and `*.user` are already gitignored — never force-add them.
+- **Stage only the files each task names.** The working tree carries unrelated pending changes (`NETCore.sln` modified, `WebApplication1/` deleted, `.claude/settings.local.json` modified) that must stay uncommitted. Never run `git add -A`, `git add .`, or `git commit -a`.
 
 ---
 
