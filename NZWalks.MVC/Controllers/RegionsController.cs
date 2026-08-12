@@ -161,6 +161,65 @@ public class RegionsController : Controller
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        try
+        {
+            return View(await _api.GetAsync(id, ct));
+        }
+        catch (ApiException ex) when (ex.StatusCode == StatusCodes.Status404NotFound)
+        {
+            return NotFound();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            _logger.LogError(ex, "NZWalks API call failed loading region {RegionId} for delete", id);
+            ViewData["ApiError"] = UnreachableMessage;
+            return View(model: null);
+        }
+    }
+
+    [HttpPost, ActionName(nameof(Delete))]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken ct)
+    {
+        try
+        {
+            await _api.DeleteAsync(id, ct);
+            return RedirectToAction(nameof(Index));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Client disconnected; there is nobody to render for.
+            return new EmptyResult();
+        }
+        catch (Exception ex) when (ex is ApiException
+                                     or HttpRequestException
+                                     or OperationCanceledException)
+        {
+            _logger.LogError(ex, "NZWalks API call failed deleting region {RegionId}", id);
+            ViewData["ApiError"] = UnreachableMessage;
+            try
+            {
+                return View(await _api.GetAsync(id, ct));
+            }
+            catch (Exception reload) when (reload is ApiException
+                                             or HttpRequestException
+                                             or OperationCanceledException)
+            {
+                return View(model: null);
+            }
+        }
+    }
+
     private static FileParameter? ToFileParameter(IFormFile? file)
         => file is null || file.Length == 0
             ? null
