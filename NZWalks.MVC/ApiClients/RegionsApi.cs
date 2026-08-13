@@ -31,7 +31,30 @@ public sealed class RegionsApi : IRegionsApi
             // status 200 as success and throws ApiException for the real 201, even
             // though the region was created and the response body is the created
             // RegionDto. Recover it here rather than surfacing a false failure.
-            var created = JsonConvert.DeserializeObject<RegionDto>(ex.Response);
+            //
+            // RegionDto's generated Required = Required.Always on Id/Code/Name means
+            // a stale contract (e.g. the API renamed or dropped one of those
+            // properties without NZWalks.MVC/OpenAPIs/nzwalks.v1.json being
+            // refreshed - see NZWalks.MVC/CLAUDE.md, "Refreshing the API contract")
+            // makes this deserialization throw JsonSerializationException, a
+            // JsonException. Every other response-parsing failure in the generated
+            // client is already wrapped as ApiException by ReadObjectResponseAsync;
+            // do the same here instead of letting JsonException escape the
+            // controllers' ApiException/HttpRequestException/OperationCanceledException
+            // catch filters as an unhandled 500. The region really was created by the
+            // time this fires, so say so rather than implying the write failed.
+            RegionDto? created;
+            try
+            {
+                created = JsonConvert.DeserializeObject<RegionDto>(ex.Response);
+            }
+            catch (JsonException jsonEx)
+            {
+                throw new ApiException(
+                    "Region was created (201) but the response body could not be parsed as RegionDto.",
+                    ex.StatusCode, ex.Response, ex.Headers, jsonEx);
+            }
+
             return created ?? throw new ApiException(
                 "Region was created (201) but the response body could not be parsed as RegionDto.",
                 ex.StatusCode, ex.Response, ex.Headers, ex);

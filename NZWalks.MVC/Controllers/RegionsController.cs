@@ -76,6 +76,12 @@ public class RegionsController : Controller
             return View(form);
         }
 
+        if (!ImageUploadValidator.IsValid(form.Image))
+        {
+            ModelState.AddModelError(nameof(form.Image), ImageUploadValidator.ErrorMessage);
+            return View(form);
+        }
+
         try
         {
             await _api.CreateAsync(form.Code, form.Name, ToFileParameter(form.Image), ct);
@@ -134,6 +140,12 @@ public class RegionsController : Controller
     {
         if (!ModelState.IsValid)
         {
+            return View(form);
+        }
+
+        if (!ImageUploadValidator.IsValid(form.Image))
+        {
+            ModelState.AddModelError(nameof(form.Image), ImageUploadValidator.ErrorMessage);
             return View(form);
         }
 
@@ -196,6 +208,10 @@ public class RegionsController : Controller
             await _api.DeleteAsync(id, ct);
             return RedirectToAction(nameof(Index));
         }
+        catch (ApiException ex) when (ex.StatusCode == StatusCodes.Status404NotFound)
+        {
+            return NotFound();
+        }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             // Client disconnected; there is nobody to render for.
@@ -223,5 +239,42 @@ public class RegionsController : Controller
     private static FileParameter? ToFileParameter(IFormFile? file)
         => file is null || file.Length == 0
             ? null
-            : new FileParameter(file.OpenReadStream(), file.FileName, file.ContentType);
+            : new FileParameter(file.OpenReadStream(), SanitizeFileName(file.FileName), file.ContentType);
+
+    // The generated client's Regions*Async methods build a
+    // MultipartFormDataContent and call content_.Add(content_image_, "Image",
+    // fileName ?? "Image"). MultipartFormDataContent.Add validates that name and
+    // throws ArgumentException when it contains '"', CR, LF, or is null/empty/
+    // whitespace - an exception type that is not ApiException/HttpRequestException/
+    // OperationCanceledException, so it would escape every catch filter below and
+    // surface as an unhandled 500. Strip any path component (the API only ever
+    // reads Path.GetExtension of this value, never the directory) and substitute a
+    // safe placeholder - preserving the real extension when it is itself safe -
+    // whenever the raw name is unusable.
+    private static string SanitizeFileName(string? fileName)
+    {
+        var candidate = Path.GetFileName(fileName ?? string.Empty);
+        if (IsSafeMultipartName(candidate))
+        {
+            return candidate;
+        }
+
+        string extension;
+        try
+        {
+            extension = Path.GetExtension(candidate) ?? string.Empty;
+        }
+        catch (ArgumentException)
+        {
+            extension = string.Empty;
+        }
+
+        return IsSafeMultipartName(extension) ? "upload" + extension : "upload";
+    }
+
+    private static bool IsSafeMultipartName(string value)
+        => !string.IsNullOrWhiteSpace(value)
+           && !value.Contains('"')
+           && !value.Contains('\r')
+           && !value.Contains('\n');
 }
