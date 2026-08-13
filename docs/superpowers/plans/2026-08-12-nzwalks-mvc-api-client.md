@@ -1139,6 +1139,22 @@ git commit -m "Document the generated NZWalks.API client in project guidance"
 
 ---
 
+## Known issues accepted at merge (2026-08-13)
+
+Merged to `main` at `08e55c4`. The final whole-branch review raised 5 Important + 3 Minor findings, all fixed in one wave (`58fc24a`, `2a68ea0`, `08e55c4`) and confirmed by a scoped re-review. Two findings were **verified reachable and deliberately left unfixed**, because the process permits only one fix wave after the final review. Both live in the upload path, both need a hand-crafted multipart request (no browser produces them), and neither corrupts data:
+
+1. **Control characters in the upload filename cause an unhandled 500.** `RegionsController.IsSafeMultipartName` rejects only `"`, CR, LF and whitespace-only names. A filename containing NUL or another C0 control passes it, then `MultipartFormDataContent.Add` throws `FormatException` — which is not `ApiException`/`HttpRequestException`/`OperationCanceledException`, so it escapes the controller filters. Fix: also reject `char.IsControl`.
+2. **A malformed but `image/`-prefixed Content-Type causes an unhandled 500.** `ImageUploadValidator` checks `ContentType.StartsWith("image/")`, which `image/` and `image/png x` satisfy; the generated client then calls `MediaTypeHeaderValue.Parse` on it and throws `FormatException`, escaping the same filters. Fix: gate on `MediaTypeHeaderValue.TryParse`.
+
+Also accepted as-is, with reasoning recorded during review:
+
+- `ResolveUrl` mangles protocol-relative URLs (`//example.com/x.jpg`) and Windows-style paths into broken-but-safe relative URLs. The `http`/`https` scheme allowlist means `javascript:` and `data:` are inert, so this is a cosmetic gap, not a vector.
+- The client-abort branch (`EmptyResult` when `ct.IsCancellationRequested`) is never exercised. It is ordered ahead of a filter that also catches `OperationCanceledException`, so a miss falls through to the correct banner path.
+- `RegionFormViewModel.Code`'s `[StringLength(3, MinimumLength = 2)]` is stricter than the API, which enforces no length at any layer. A region created outside this UI with a longer code cannot be edited here until its code is shortened.
+- A dead `try/catch (ArgumentException)` around `Path.GetExtension` in `SanitizeFileName`; that method never throws on .NET Core.
+
+**Deliberate deviation from this plan discovered late:** the plan's Global Constraints told implementers to leave `NETCore.sln` uncommitted as an unrelated change. That was wrong — the uncommitted hunk *added* `NZWalks.MVC` to the solution, which `main`'s `2a80011` had removed. Left alone, CI (`dotnet build ./NETCore.sln`) would never have compiled this project, and with no test project that was the only automated safety net. Corrected in `58fc24a`.
+
 ## Self-Review Notes
 
 **Spec coverage:** Codegen wiring → Task 2. Registration → Task 3. Regions CRUD → Tasks 4-7. Image rendering → Task 3 (`ResolveUrl`) + Tasks 4/6/7 (views). Error handling → every controller action. Risk 1 (multipart) → Task 1 Step 4 gate. Risk 2 (stale contract) → Task 8 Step 4 refresh docs. Risk 3 (dev cert) → Global Constraints. Risk 4 (name churn) → the `IRegionsApi` facade. Verification list → Task 8 Step 3. No auth, no retry, no 409 UI, no test project → Global Constraints.
