@@ -69,3 +69,13 @@ Be aware of these before extending the code — they are easy to trip over:
 `AddDbContext<MVCNetNZWalksContext>` (SQL Server) → `AddScoped<IWalkRepository, WalkRepository>`
 → `AddControllers` → `AddAutoMapper(typeof(Program))` → `AddOpenApi`. HTTPS redirection and
 authorization middleware are present, but **no authentication is configured** (auth is a no-op).
+
+## A sibling project pins a copy of this API's OpenAPI document
+
+`NZWalks.MVC` generates its API client at build time from a **committed copy** of this API's
+OpenAPI document, checked in at `NZWalks.MVC/OpenAPIs/nzwalks.v1.json` — it does not talk to a
+running `NZWalks.API` during its build. If you rename a route, add/remove/rename a DTO property,
+or otherwise change a Regions/Walks/Difficulties contract here, that copy goes stale: `NZWalks.MVC`
+still builds cleanly and only fails at runtime (or silently drifts, e.g. a renamed DTO property
+becomes a parse failure instead of a compile error). Re-capture it after such a change — see the
+"Refreshing the API contract" section in `NZWalks.MVC/CLAUDE.md` for the exact command.

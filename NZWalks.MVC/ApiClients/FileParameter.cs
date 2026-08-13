@@ -14,6 +14,15 @@ namespace NZWalks.MVC.ApiClients;
 // Shape matches NSwag's standard FileParameter template exactly so it is a drop-in
 // stand-in if a future NSwag/spec change makes generation emit it after all
 // (in which case this file should be deleted to avoid a duplicate-type error).
+//
+// Stream ownership: HttpRequestMessage.Dispose() cascades to the StreamContent
+// wrapping Data, which disposes Data in turn, so nothing here needs to dispose
+// it itself (and disposing System.IO.Stream.Null, used for the no-image case,
+// is a no-op anyway). But that also means Data is single-use: the first send
+// consumes and disposes the underlying stream, so if retry/Polly logic were
+// ever added, a retried send of the same FileParameter would fail against an
+// already-disposed stream. A retry path would need to re-open the source
+// (e.g. call IFormFile.OpenReadStream() again) rather than reuse the instance.
 public partial class FileParameter
 {
     public FileParameter(System.IO.Stream data)
