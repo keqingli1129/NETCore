@@ -47,3 +47,10 @@ steps:
     targetPath: '$(Build.ArtifactStagingDirectory)'
     artifact: 'drop'
     publishLocation: 'pipeline'
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: 'Azure subscription 1(bdb9ef8a-2f26-4733-b22f-a4b6c3125c31)'
+    appType: 'webApp'
+    appName: 'COreMVC'
+    package: '$(System.DefaultWorkingDirectory)/**/*.zip'
+    deploymentMethod: 'auto'
